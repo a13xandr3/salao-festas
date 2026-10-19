@@ -8,9 +8,8 @@ describe('TopSpaces', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TopSpaces]
-    })
-    .compileComponents();
+      imports: [TopSpaces],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(TopSpaces);
     component = fixture.componentInstance;

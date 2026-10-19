@@ -1,11 +1,9 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-top-spaces',
-  imports: [],
   templateUrl: './top-spaces.html',
   styleUrl: './top-spaces.scss',
 })
-export class TopSpaces {
-
-}
+export class TopSpaces {}

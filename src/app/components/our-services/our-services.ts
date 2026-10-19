@@ -1,11 +1,9 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-our-services',
-  imports: [],
   templateUrl: './our-services.html',
   styleUrl: './our-services.scss',
 })
-export class OurServices {
-
-}
+export class OurServices {}
