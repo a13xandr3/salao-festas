@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+.top-spaces-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 2rem);
+  max-width: 960px;
+  margin: 1.5rem auto 0;
+}
+.top-spaces-card {
+  min-width: 0;
+}
+.top-spaces {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+}
+@media (max-width: 767.98px) {
+  .top-spaces-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 360px;
+  }
+}
+.top-spaces-background {
+  background: linear-gradient(
+    90deg,
+    #E3E0D1 0%,
+    #E4E1CE 5%,
+    #E4E0C3 10%,
+    #E3E0C3 15%,
+    #E6E5CD 20%,
+    #EDEBE0 25%,
+    #F1EFEC 30%,
+    #F0EEEC 35%,
+    #E6E5DF 40%,
+    #D9D9CC 45%,
+    #D5D6C7 50%,
+    #DCDCD0 55%,
+    #E3E2D9 60%,
+    #E9E8DD 65%,
+    #EBEADE 70%,
+    #ECEADC 75%,
+    #ECEADA 80%,
+    #EDEADB 85%,
+    #EEEBDF 90%,
+    #EFECE2 95%,
+    #EFECE2 100%
+  );
+}
+.row,
+ul {
+  align-items: center;
+}
