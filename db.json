@@ -1,0 +1,70 @@
+{
+  "contacts": [
+    {
+      "id": "8b47302e-26c2-495c-94ee-93df37378a7d",
+      "name": "Alexandre Esteves",
+      "phone": "11925020772",
+      "email": "a13xandr3ea@gmail.com",
+      "message": "teste",
+      "createdAt": "2026-10-18T04:53:22.457Z",
+      "emailProvider": "formsubmit",
+      "emailStatus": "not_tracked"
+    },
+    {
+      "id": "5bc883f1-b987-499e-bd56-6cf09b8a2f32",
+      "name": "Keila",
+      "phone": "18996555494",
+      "email": "keillatc@yahoo.com.br",
+      "message": "teste de escrita",
+      "createdAt": "2026-10-18T04:58:02.986Z",
+      "emailProvider": "formsubmit",
+      "emailStatus": "not_tracked"
+    },
+    {
+      "id": "05d9a84f-713d-466e-b54a-6b42dc41987f",
+      "name": "Alexandre Esteves Alves",
+      "phone": "18981835385",
+      "email": "estevesalves@icloud.com",
+      "message": "loren ipsum dolor sit amet",
+      "createdAt": "2026-10-18T15:30:21.870Z",
+      "emailProvider": "formsubmit",
+      "emailStatus": "not_tracked"
+    }
+  ],
+  "reservations": [],
+  "bookingSettings": {
+    "opensAt": "08:00",
+    "closesAt": "22:00",
+    "slotMinutes": 60
+  },
+  "preReservations": [
+    {
+      "cancellationTokenHash": "62c6c4ec17853c68c06b806bf8509156b618b29101c061180238a74cab180aa2",
+      "notificationToken": "1c443c1f1a37733b87d4a596f21bb99ee197b7f02ec6511d07377c3b1e60e78e",
+      "notifications": {
+        "customer": {
+          "provider": "formsubmit",
+          "status": "awaiting_formsubmit"
+        },
+        "manager": {
+          "provider": "formsubmit",
+          "status": "awaiting_formsubmit"
+        }
+      },
+      "id": "dcae9b06-9d64-4447-97bd-35a694c52467",
+      "name": "Ricardo Soares",
+      "phone": "18981835385",
+      "email": "a13xandr3ea@gmail.com",
+      "startDate": "2026-10-19",
+      "startTime": "08:00",
+      "endDate": "2026-10-20",
+      "endTime": "08:00",
+      "startAt": "2026-10-19T11:00:00.000Z",
+      "endAt": "2026-10-20T11:00:00.000Z",
+      "timeZone": "America/Sao_Paulo",
+      "status": "pending_payment",
+      "createdAt": "2026-10-19T03:49:49.467Z",
+      "notificationProvider": "formsubmit"
+    }
+  ]
+}

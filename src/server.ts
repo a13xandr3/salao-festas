@@ -5,12 +5,19 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import { join } from 'node:path';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
+
+app.use(createProxyMiddleware({
+  pathFilter: '/api/**',
+  target: process.env['CONTACT_API_URL'] || 'http://127.0.0.1:3001',
+  changeOrigin: true,
+}));
 
 /**
  * Example Express Rest API endpoints can be defined here.
