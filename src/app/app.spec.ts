@@ -1,3 +1,4 @@
+import { provideTestConfig, rpcUrl } from './testing/supabase';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -8,12 +9,19 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideZonelessChangeDetection(), provideHttpClient(), provideHttpClientTesting()]
+      providers: [
+        provideZonelessChangeDetection(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideTestConfig(),
+      ],
     }).compileComponents();
   });
 
   afterEach(() => {
-    for (const request of TestBed.inject(HttpTestingController).match(req => req.url === '/api/availability')) {
+    for (const request of TestBed.inject(HttpTestingController).match(
+      (req) => req.url === rpcUrl('booking_availability'),
+    )) {
       request.flush({}, { status: 503, statusText: 'Unavailable' });
     }
     TestBed.inject(HttpTestingController).verify();

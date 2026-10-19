@@ -1,10 +1,80 @@
-:host { display: block; }
-.pre-reservation { padding-top: clamp(2rem, 5vw, 4rem); margin-top: clamp(2rem, 5vw, 4rem); border-top: 1px solid #29312618; scroll-margin-top: 1rem; }
-.eyebrow { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 600; color: #62694d; margin-bottom: 1rem; }
-h3 { font-size: clamp(1.5rem, 2.5vw, 2rem); font-weight: 600; line-height: 1.3; letter-spacing: -0.03em; margin-bottom: 1.5rem; }
-p { color: #50574b; line-height: 1.85; }
-.payment-note { padding: 1rem; border-left: 3px solid #62694d; background: #62694d0c; border-radius: 0 0.5rem 0.5rem 0; }
-.form-label { font-weight: 500; margin-bottom: 0.625rem; }
-.form-control { min-width: 0; max-width: 100%; padding: 0.875rem 1rem; border: 1px solid #62694d66; border-radius: 0.75rem; background-color: #ffffff50; color: #293126; font-size: 1rem; line-height: 1.6; &:focus { border-color: #62694d; box-shadow: 0 0 0 0.2rem #62694d26; } &::placeholder { color: #687060; opacity: 1; } }
-.reserve-button { color: #fff; background: #303b2c; &:hover, &:focus-visible { color: #fff; background: #414f3c; } &:focus-visible { outline: 2px solid #303b2c; outline-offset: 3px; } &:disabled { color: #fff; background: #303b2c; opacity: 0.65; } }
-@media (max-width: 575.98px) { .reserve-button { width: 100%; } }
+:host {
+  display: block;
+}
+.pre-reservation {
+  padding-top: clamp(2rem, 5vw, 4rem);
+  margin-top: clamp(2rem, 5vw, 4rem);
+  border-top: 1px solid #29312618;
+  scroll-margin-top: 1rem;
+}
+.eyebrow {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: #62694d;
+  margin-bottom: 1rem;
+}
+h3 {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+}
+p {
+  color: #50574b;
+  line-height: 1.85;
+}
+.payment-note {
+  padding: 1rem;
+  border-left: 3px solid #62694d;
+  background: #62694d0c;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.625rem;
+}
+.form-control {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid #62694d66;
+  border-radius: 0.75rem;
+  background-color: #ffffff50;
+  color: #293126;
+  font-size: 1rem;
+  line-height: 1.6;
+  &:focus {
+    border-color: #62694d;
+    box-shadow: 0 0 0 0.2rem #62694d26;
+  }
+  &::placeholder {
+    color: #687060;
+    opacity: 1;
+  }
+}
+.reserve-button {
+  color: #fff;
+  background: #303b2c;
+  &:hover,
+  &:focus-visible {
+    color: #fff;
+    background: #414f3c;
+  }
+  &:focus-visible {
+    outline: 2px solid #303b2c;
+    outline-offset: 3px;
+  }
+  &:disabled {
+    color: #fff;
+    background: #303b2c;
+    opacity: 0.65;
+  }
+}
+@media (max-width: 575.98px) {
+  .reserve-button {
+    width: 100%;
+  }
+}

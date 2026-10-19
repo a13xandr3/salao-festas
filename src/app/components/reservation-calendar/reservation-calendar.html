@@ -20,7 +20,7 @@
           @for (day of days(); track $index) {
             @if (day.date) {
               <button type="button" class="calendar-day" [class.free]="day.status === 'free'" [class.full]="day.status === 'reserved'" [class.selected]="selected() === day.date" [class.today]="day.date === now().date" [disabled]="day.past || loading() || error()" [attr.aria-label]="day.description" [attr.aria-pressed]="selected() === day.date" [attr.aria-current]="day.date === now().date ? 'date' : null" (click)="select(day.date)">
-                <span>{{ day.number }}</span><span class="day-state">{{ day.status === 'reserved' ? 'Reservado' : day.status === 'free' ? 'Livre' : '—' }}</span>
+                <span>{{ day.number }}</span><span class="day-state">{{ day.label }}</span>
               </button>
             } @else { <span aria-hidden="true"></span> }
           }
@@ -42,7 +42,7 @@
           <p class="agenda-status">Livre para pré-reserva. Cada diária corresponde a 24 horas, das 08h às 08h do dia seguinte. Você pode reservar várias diárias consecutivas.</p>
           <a href="#pre-reserva" class="contact-link">Fazer pré-reserva nesta data <span aria-hidden="true">↗</span></a>
         } @else {
-          <p class="agenda-status">{{ selectedReserved() ? 'Reservado. Escolha outra data livre no calendário.' : 'O período desta data já começou. Escolha uma data futura.' }}</p>
+          <p class="agenda-status">{{ unavailableReason() }}</p>
         }
       </div>
     </div>

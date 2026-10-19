@@ -57,8 +57,8 @@
       <div class="alert alert-success mt-4 mb-0">
             <p class="fw-semibold mb-2">Pré-reserva registrada, aguardando pagamento.</p>
             <p class="small mb-2" style="overflow-wrap: anywhere;">Protocolo: {{ confirmation.id }}</p>
-            @if (confirmation.links?.contract) { <p class="mb-2"><a [href]="confirmation.links!.contract" target="_blank" rel="noopener" class="link-dark">Baixar contrato PDF</a></p> }
-            @if (confirmation.links?.pix) { <p class="mb-2"><a [href]="confirmation.links!.pix" target="_blank" rel="noopener" class="link-dark">Consultar Pix</a></p> }
+            @if (confirmation.links.contract) { <p class="mb-2"><a [href]="confirmation.links.contract" target="_blank" rel="noopener" class="link-dark">Baixar contrato PDF</a></p> }
+            @if (confirmation.links.pix) { <p class="mb-2"><a [href]="confirmation.links.pix" target="_blank" rel="noopener" class="link-dark">Consultar Pix</a></p> }
             <p class="mb-2">Conclua a verificação na página do FormSubmit para solicitar o envio ao gestor e a resposta automática ao cliente. Depois, consulte seu e-mail para pagamento, contrato e envio do documento assinado.</p>
             <button type="button" class="btn btn-outline-dark rounded-pill my-2" (click)="resumeNotification()" [disabled]="sending()">Continuar envio pelo FormSubmit</button>
 
