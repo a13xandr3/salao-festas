@@ -1,0 +1,44 @@
+:host { display: block; }
+.contact-section {
+  padding: clamp(2.5rem, 6vw, 5rem) clamp(1.25rem, 5vw, 4rem);
+  border-top: 1px solid #29312618;
+}
+.contact-eyebrow {
+  margin-bottom: 1rem;
+  color: #62694d;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+h2 {
+  margin-bottom: 1.5rem;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+.contact-intro { color: #50574b; line-height: 1.85; margin-bottom: 1.5rem; }
+.contact-note { color: #50574b; line-height: 1.7; }
+.form-label { color: #293126; font-weight: 500; margin-bottom: 0.625rem; }
+.form-control {
+  padding: 0.875rem 1rem;
+  border: 1px solid #62694d66;
+  border-radius: 0.75rem;
+  background-color: #ffffff50;
+  color: #293126;
+  font-size: 1rem;
+  line-height: 1.6;
+  &:focus { border-color: #62694d; background-color: #ffffff90; box-shadow: 0 0 0 0.2rem #62694d26; }
+  &::placeholder { color: #687060; opacity: 1; }
+}
+textarea { resize: vertical; min-height: 10rem; }
+.contact-button {
+  background-color: #303b2c;
+  color: #fff;
+  &:hover, &:focus-visible { background-color: #414f3c; color: #fff; }
+  &:focus-visible { outline: 2px solid #303b2c; outline-offset: 3px; }
+  &:disabled { background-color: #303b2c; color: #fff; opacity: 0.65; }
+}
+.invalid-feedback { line-height: 1.6; }
+@media (max-width: 575.98px) { .contact-button { width: 100%; } }
