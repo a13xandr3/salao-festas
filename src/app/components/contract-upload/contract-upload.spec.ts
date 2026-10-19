@@ -1,0 +1,27 @@
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ContractUpload } from './contract-upload';
+describe('ContractUpload', () => {
+  beforeEach(async () => { await TestBed.configureTestingModule({ imports: [ContractUpload], providers: [provideHttpClient(), provideHttpClientTesting()] }).compileComponents(); });
+  afterEach(() => { TestBed.inject(HttpTestingController).verify(); history.replaceState(null, '', '/'); });
+  it('is hidden without the individual email link', () => {
+    const fixture = TestBed.createComponent(ContractUpload); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
+  });
+  it('loads the owner form and prepares a native multipart submission with the PDF attachment', async () => {
+    history.replaceState(null, '', '/#enviar-contrato?id=my-id&token=' + 'a'.repeat(64));
+    const fixture = TestBed.createComponent(ContractUpload); fixture.detectChanges();
+    const request = TestBed.inject(HttpTestingController).expectOne('/api/pre-reservations/my-id/contract-form');
+    expect(request.request.headers.get('X-Cancellation-Token')).toBe('a'.repeat(64));
+    request.flush({ submission: { action: 'https://formsubmit.co/manager@example.com', fields: { _subject: 'Contrato assinado', email: 'client@example.com' } } }); fixture.detectChanges();
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    expect(form.enctype).toBe('multipart/form-data'); expect(form.method).toBe('post');
+    const input = form.querySelector<HTMLInputElement>('[name="attachment"]')!;
+    const file = new File(['%PDF-test'], 'assinado.pdf', { type: 'application/pdf' });
+    Object.defineProperty(file, 'slice', { value: () => ({ text: async () => '%PDF-' }) });
+    Object.defineProperty(input, 'files', { value: [file] }); input.dispatchEvent(new Event('change'));
+    await fixture.whenStable(); fixture.detectChanges();
+    expect(form.querySelector<HTMLButtonElement>('button')!.disabled).toBe(false);
+  });
+});

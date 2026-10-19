@@ -1,0 +1,9 @@
+:host { display: block; }
+.cancellation { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #29312618; scroll-margin-top: 1rem; }
+h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.4; margin-bottom: 1rem; }
+p, small { color: #50574b; line-height: 1.8; }
+.form-label { font-weight: 500; }
+.form-control { background: #ffffff50; border: 1px solid #62694d66; padding: 0.875rem 1rem; border-radius: 0.75rem; font-size: 1rem; &:focus { border-color: #62694d; box-shadow: 0 0 0 0.2rem #62694d26; } }
+.form-check-input:checked { background-color: #303b2c; border-color: #303b2c; }
+.cancel-button { color: #683d34; border: 1px solid #934e4380; background: transparent; &:hover { color: #fff; background: #683d34; } &:focus-visible { outline: 2px solid #683d34; outline-offset: 3px; } }
+@media (max-width: 575.98px) { .cancel-button { width: 100%; } }
