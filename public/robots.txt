@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://a13xandr3.github.io/salao-festas/sitemap.xml
