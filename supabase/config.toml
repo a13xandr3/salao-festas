@@ -1,0 +1,7 @@
+project_id = "salao-festas"
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.send-email-worker]
+verify_jwt = false
