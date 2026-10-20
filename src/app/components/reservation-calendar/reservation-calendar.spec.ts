@@ -101,4 +101,19 @@ describe('ReservationCalendar', () => {
     expect(element.querySelectorAll('.calendar-day.free')).toHaveLength(0);
   });
 
+  it('opens the form with the chosen calendar date even after the start field was edited', () => {
+    const { respond, element, fixture } = setup();
+    respond();
+    const start = element.querySelector<HTMLInputElement>('#pre-start-date')!;
+    start.value = '2028-02-15';
+    start.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLButtonElement>('.calendar-day[aria-label*="11 de fevereiro"]')!.click();
+    fixture.detectChanges();
+    element.querySelector<HTMLAnchorElement>('.contact-link')!.click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-pre-reservation form')).not.toBeNull();
+    expect(element.querySelector<HTMLInputElement>('#pre-start-date')!.value).toBe('2028-02-11');
+    expect(element.querySelector<HTMLInputElement>('#pre-end-date')!.value).toBe('2028-02-12');
+  });
+
 });

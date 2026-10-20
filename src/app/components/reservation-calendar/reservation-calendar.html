@@ -40,7 +40,7 @@
           <p class="agenda-status" role="alert">Não foi possível consultar a agenda. Atualize para tentar novamente.</p>
         } @else if (selectedFree()) {
           <p class="agenda-status">Livre para pré-reserva. Cada diária corresponde a 24 horas, das 08h às 08h do dia seguinte. Você pode reservar várias diárias consecutivas.</p>
-          <a href="#pre-reserva" class="contact-link">Fazer pré-reserva nesta data <span aria-hidden="true">↗</span></a>
+          <a href="#pre-reserva" class="contact-link" (click)="openReservation()">Fazer pré-reserva nesta data <span aria-hidden="true">↗</span></a>
         } @else {
           <p class="agenda-status">{{ unavailableReason() }}</p>
         }
@@ -48,7 +48,7 @@
     </div>
   </div>
   <p class="agenda-note">A agenda consulta as pré-reservas a cada 30 segundos. Pagamento e contrato são acompanhados pela equipe do salão.</p>
-  @if (!linkAction()) { <app-pre-reservation [selectedDate]="selected()" (created)="load()"></app-pre-reservation> }
+  <div [hidden]="linkAction()"><app-pre-reservation [selectedDate]="selected()" (created)="load()"></app-pre-reservation></div>
   <app-cancel-pre-reservation (cancelled)="load()"></app-cancel-pre-reservation>
   <app-contract-upload></app-contract-upload>
 </section>

@@ -10,6 +10,7 @@ import {
   DestroyRef,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { interval, Subscription, timeout } from 'rxjs';
@@ -25,6 +26,7 @@ import { Availability } from '../../services/booking.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReservationCalendar {
+  private readonly preReservation = viewChild(PreReservation);
   private readonly document = inject(DOCUMENT);
   protected readonly linkAction = signal(false);
   private readonly api = inject(SupabaseApi);
@@ -70,6 +72,12 @@ export class ReservationCalendar {
         .subscribe(() => this.load());
     });
   }
+  protected openReservation(): void {
+    if (!this.selectedFree()) return;
+    this.linkAction.set(false);
+    this.preReservation()?.openForDate(this.selected());
+  }
+
   protected changeMonth(direction: number): void {
     const [year, month] = this.month().split('-').map(Number);
     const next = new Date(Date.UTC(year, month - 1 + direction, 1)).toISOString().slice(0, 7);
