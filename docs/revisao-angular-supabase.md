@@ -1,5 +1,7 @@
 # Revisão do Angular 20 e Supabase — 19/10/2026
 
+Registro histórico da revisão. Em 20/10/2026, o FormSubmit foi substituído por Gmail SMTP; a configuração atual está em [GMAIL.md](../supabase/GMAIL.md).
+
 ## Resultado
 
 Os onze componentes e o componente raiz foram revisados. O frontend agora depende somente do Supabase para persistência. Foram removidos a API JSON Server, o proxy, os scripts de servidor e o banco JSON local. As alterações são locais; a revisão não publica o site.

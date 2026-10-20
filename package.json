@@ -10,7 +10,12 @@
     "dev": "npm start",
     "build:pages": "ng build --configuration production --output-mode static --base-href /salao-festas/",
     "test:supabase": "node --test supabase/tests/*.test.cjs",
-    "verify:supabase": "node scripts/verify-supabase.cjs"
+    "verify:supabase": "node scripts/verify-supabase.cjs",
+    "test:email": "node --test supabase/functions/tests/*.test.mjs",
+    "check:email": "npx --yes deno@2.9.6 check --config supabase/functions/send-email/deno.json supabase/functions/send-email/index.ts && npx --yes deno@2.9.6 check --config supabase/functions/send-email-worker/deno.json supabase/functions/send-email-worker/index.ts",
+    "prepare:email": "node scripts/prepare-email.cjs",
+    "verify:email": "node scripts/verify-email.cjs",
+    "verify:gmail": "node scripts/verify-gmail.cjs"
   },
   "prettier": {
     "printWidth": 100,

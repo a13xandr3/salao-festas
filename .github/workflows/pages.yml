@@ -24,7 +24,10 @@ jobs:
       - run: npm ci
       - run: npm test -- --runInBand
       - run: npm run test:supabase
+      - run: npm run test:email
+      - run: npm run check:email
       - run: npm run verify:supabase
+      - run: npm run verify:email
       - run: npm run build:pages
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

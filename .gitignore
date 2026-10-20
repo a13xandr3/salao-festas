@@ -75,3 +75,4 @@ yarn-error.log*
 # Legacy local database and exports
 /db.json
 /db-backups/
+/supabase/.temp/

@@ -1,5 +1,7 @@
 # Supabase + GitHub Pages
 
+O envio atual usa Gmail SMTP pela fila PostgreSQL e pelas Edge Functions `send-email` e `send-email-worker`. Para a nova migração e os secrets, siga [GMAIL.md](GMAIL.md).
+
 O Angular usa a Data API REST do Supabase pelo HttpClient, sem servidor Node.js em produção. Os componentes chamam métodos tipados de `SupabaseApi`, que executam as funções em `/rest/v1/rpc/...`. Não existe interceptor nem simulação de rotas locais `/api`.
 
 ## 1. Aplicar as regras no banco existente
@@ -12,7 +14,7 @@ A migração substitui as políticas existentes dessas duas tabelas por polític
 
 Se houver reservas ativas sobrepostas ou períodos incompatíveis com diárias das 08h às 08h, a criação das restrições falha e a transação é revertida. Corrija os registros reais antes de repetir. Nenhum registro é apagado automaticamente.
 
-A limitação de submissões é de cinco registros por e-mail normalizado, por operação e janela de quinze minutos. Isso não equivale ao limite antigo por IP e não impede um robô de variar o e-mail. O CAPTCHA do FormSubmit acontece depois de salvar a pré-reserva e não protege a criação no Supabase. Para uma agenda pública sujeita a abuso, será necessário acrescentar uma verificação anti-bot confiável antes da gravação.
+A limitação de submissões é de cinco registros por e-mail normalizado, por operação e janela de quinze minutos. Isso não equivale ao limite antigo por IP e não impede um robô de variar o e-mail. Não há CAPTCHA no envio Gmail. Para uma agenda pública sujeita a abuso, será necessário acrescentar uma verificação anti-bot confiável antes da gravação.
 
 ## 2. Configurar o frontend
 
@@ -22,7 +24,6 @@ Edite `public/app-config.json`:
 {
   "supabaseUrl": "https://SEU-PROJETO.supabase.co",
   "supabasePublishableKey": "sb_publishable_SUA_CHAVE_PUBLICA",
-  "managerEmail": "gestor@example.com",
   "contractUrl": "documents/contrato-demonstracao.pdf",
   "pixUrl": "pix.html"
 }
@@ -32,7 +33,7 @@ A URL e a chave publicável estão no painel do projeto, em Connect/Settings →
 
 Os caminhos relativos de contrato e Pix respeitam o `<base href>` do build, incluindo `/salao-festas/`. Podem ser substituídos por endereços HTTPS externos. Substitua o PDF demonstrativo e a página `public/pix.html` pelos recursos definitivos; a página padrão não contém chave Pix nem gera pagamentos. A chave Pix publicada ao cliente deve ser tratada como informação pública, nunca como senha.
 
-Ative o endereço do gestor no FormSubmit. As pré-reservas usam POST nativo com CAPTCHA do provedor e resposta automática. O contato comum usa AJAX. Os estados `awaiting_formsubmit` e `not_tracked` não significam entrega comprovada. Envio do contrato é multipart diretamente ao FormSubmit e não armazena PDF no Supabase.
+O remetente e o gestor são configurados no `.env` privado e nos secrets da função Gmail. O navegador envia somente UUID, token e o PDF quando aplicável. O SMTP recebe mensagens montadas com os dados do banco; o PDF fica temporariamente na fila privada até a aceitação pelo SMTP, quando é removido.
 
 ## 3. Executar e validar
 
@@ -96,10 +97,10 @@ Confirmações antigas em `sessionStorage` e links de e-mail só funcionarão se
 
 | Função                                               | Objetivo                                              |
 | ---------------------------------------------------- | ----------------------------------------------------- |
-| `booking_create_contact(p_input)`                    | Valida e grava contato; retorna apenas UUID           |
+| `booking_create_contact(p_input)`                    | Valida e grava contato; retorna UUID e token de envio           |
 | `booking_create_reservation(p_input)`                | Valida diárias futuras, gera token e bloqueia período |
 | `booking_availability(p_month)`                      | Retorna datas/status sem dados pessoais               |
-| `booking_owned_reservation(p_id,p_token,p_contract)` | Valida token para retomar e-mail ou preparar contrato |
+| `booking_owned_reservation(p_id,p_token,p_contract)` | Valida token para validar acesso individual ao contrato |
 | `booking_cancel_reservation(p_id,p_token)`           | Exclui somente a reserva do token correspondente      |
 | `booking_confirm_payment(p_id)`                      | Confirma pagamento; exige administrador autenticado   |
 
@@ -107,4 +108,4 @@ As pré-reservas continuam sem expiração automática. Erros `PT400`, `PT404`, 
 
 ## Verificação remota
 
-`npm run verify:supabase` consulta a disponibilidade, verifica o bloqueio de leitura pública e testa rejeição de dados inválidos. Não cria registros. Com `-- --write-reservation`, cria uma única reserva sintética em janeiro de 2099, consulta seus dados com token e a exclui em `finally`, conferindo a liberação da data. Não chama o FormSubmit nem envia e-mails. O script não cria contatos porque sua exclusão requer privilégios administrativos indisponíveis à chave pública.
+`npm run verify:supabase` consulta a disponibilidade, verifica o bloqueio de leitura pública e testa rejeição de dados inválidos. Não cria registros. `npm run verify:email` verifica os endpoints, CORS e a nova RPC sem enfileirar mensagens. A antiga opção `--write-reservation` foi removida, porque uma gravação real agora também agenda e-mails.
