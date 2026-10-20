@@ -1,7 +1,7 @@
 <div class="pre-reservation" id="pre-reserva" aria-label="Pré-reserva">
   @if (ready() && formVisible()) {
-  <div class="row g-4 g-lg-5 align-items-start">
-    <div class="col-12 col-lg-4">
+  <div class="row g-3 g-md-4 g-xl-5 align-items-start">
+    <div class="col-12 col-lg-4 text-break">
       <p class="eyebrow">Garanta seu período</p>
       <h3 id="pre-reservation-title">Faça sua pré-reserva.</h3>
       <p>Escolha as datas de entrada e saída. Cada diária tem <strong>24 horas</strong>, das 08h às 08h, sem limite de diárias consecutivas.</p>
@@ -13,7 +13,7 @@
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate [attr.aria-busy]="sending()">
         <fieldset [disabled]="sending()">
           <legend class="visually-hidden">Dados da pré-reserva</legend>
-          <div class="row g-4">
+          <div class="row g-3 g-md-4">
             <div class="col-12">
               <label for="pre-name" class="form-label">Nome <span aria-hidden="true">*</span></label>
               <input id="pre-name" type="text" class="form-control" formControlName="name" autocomplete="name" required maxlength="120" placeholder="Seu nome completo" [class.is-invalid]="invalid('name')" [attr.aria-invalid]="invalid('name')" [attr.aria-describedby]="invalid('name') ? 'pre-name-error' : null">
@@ -31,19 +31,21 @@
             </div>
             <div class="col-12 col-sm-6">
               <label for="pre-start-date" class="form-label">Data de início <span aria-hidden="true">*</span></label>
-              <input id="pre-start-date" type="date" class="form-control" formControlName="startDate" [min]="today" required [class.is-invalid]="invalid('startDate')" [attr.aria-invalid]="invalid('startDate')" aria-describedby="pre-period-error">
+              <input id="pre-start-date" type="date" class="form-control px-2 px-sm-3" formControlName="startDate" [min]="today" required [class.is-invalid]="invalid('startDate')" [attr.aria-invalid]="invalid('startDate')" aria-describedby="pre-period-error">
               @if (invalid('startDate')) { <div class="invalid-feedback">Informe a data de início.</div> }
             </div>
             <div class="col-12 col-sm-6">
               <label for="pre-end-date" class="form-label">Data de término <span aria-hidden="true">*</span></label>
-              <input id="pre-end-date" type="date" class="form-control" formControlName="endDate" [min]="form.controls.startDate.value || today" required [class.is-invalid]="invalid('endDate')" [attr.aria-invalid]="invalid('endDate')" aria-describedby="pre-period-error">
+              <input id="pre-end-date" type="date" class="form-control px-2 px-sm-3" formControlName="endDate" [min]="form.controls.startDate.value || today" required [class.is-invalid]="invalid('endDate')" [attr.aria-invalid]="invalid('endDate')" aria-describedby="pre-period-error">
               @if (invalid('endDate')) { <div class="invalid-feedback">Informe a data de término.</div> }
             </div>
-            <div class="col-12" id="pre-period-error" aria-live="polite">
+            <div class="col-12 text-break" id="pre-period-error" aria-live="polite">
               @if (attempted() && form.hasError('minimumPeriod')) { <p class="text-danger mb-3">Escolha pelo menos uma diária de 24 horas entre a entrada e a saída.</p> }
               @if (attempted() && form.hasError('pastStart')) { <p class="text-danger mb-3">O início da pré-reserva deve estar no futuro.</p> }
               @if (attempted() && form.hasError('invalidPeriod')) { <p class="text-danger mb-3">Informe datas e horários válidos.</p> }
-              <button type="submit" class="btn reserve-button rounded-pill px-4 py-3" [disabled]="sending()">{{ sending() ? 'Registrando…' : 'Fazer pré-reserva' }} <span class="ms-2" aria-hidden="true">↗</span></button>
+              <div class="d-grid d-sm-flex">
+                <button type="submit" class="btn reserve-button rounded-pill text-wrap text-break px-3 px-sm-4 py-3" [disabled]="sending()">{{ sending() ? 'Registrando…' : 'Fazer pré-reserva' }} <span class="ms-2" aria-hidden="true">↗</span></button>
+              </div>
             </div>
           </div>
         </fieldset>
@@ -52,15 +54,15 @@
   </div>
   }
   <div aria-live="polite" aria-atomic="true">
-    @if (error()) { <p class="alert alert-danger mt-4 mb-0">{{ error() }}</p> }
+    @if (error()) { <p class="alert alert-danger text-break mt-3 mt-md-4 mb-0">{{ error() }}</p> }
     @if (error() && receipt()) {
-      <button type="button" class="btn btn-outline-dark rounded-pill my-2" (click)="resumeNotification()" [disabled]="sending()">Tentar enviar e-mail novamente</button>
+      <button type="button" class="btn btn-outline-dark rounded-pill text-wrap text-break my-2 px-3 py-3" (click)="resumeNotification()" [disabled]="sending()">Tentar enviar e-mail novamente</button>
     }
   </div>
 </div>
 
-<dialog #successDialog class="reservation-success" aria-labelledby="reservation-success-title" aria-describedby="reservation-success-message" (cancel)="$event.preventDefault(); closeSuccess()">
+<dialog #successDialog class="reservation-success text-break" aria-labelledby="reservation-success-title" aria-describedby="reservation-success-message" (cancel)="$event.preventDefault(); closeSuccess()">
   <h3 id="reservation-success-title">Pré-reserva feita com sucesso.</h3>
   <p id="reservation-success-message">As orientações da sua pré-reserva serão enviadas por e-mail.</p>
-  <button type="button" class="btn reserve-button rounded-pill px-4 py-3" autofocus (click)="closeSuccess()">Fechar</button>
+  <button type="button" class="btn reserve-button rounded-pill text-wrap text-break px-3 px-sm-4 py-3" autofocus (click)="closeSuccess()">Fechar</button>
 </dialog>

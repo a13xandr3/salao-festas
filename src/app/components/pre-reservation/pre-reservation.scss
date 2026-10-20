@@ -81,7 +81,10 @@ p {
 
 .reservation-success {
   width: min(30rem, calc(100% - 2rem));
-  padding: 1.5rem;
+  max-height: calc(100% - 2rem);
+  max-height: calc(100svh - 2rem);
+  overflow-y: auto;
+  padding: clamp(1rem, 4vw, 1.5rem);
   border: 0;
   border-radius: 1rem;
   color: #293126;

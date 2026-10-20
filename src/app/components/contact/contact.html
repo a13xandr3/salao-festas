@@ -1,16 +1,16 @@
 <section class="contact-section" aria-labelledby="contact-title">
-  <div class="row g-4 g-lg-5 align-items-start">
-    <div class="col-12 col-lg-4">
+  <div class="row g-3 g-md-4 g-xl-5 align-items-start">
+    <div class="col-12 col-lg-4 text-break">
       <p class="contact-eyebrow">Fale conosco</p>
-      <h2 id="contact-title">Vamos planejar<br>bons momentos?</h2>
+      <h2 id="contact-title" class="mb-3 mb-lg-4">Vamos planejar bons momentos?</h2>
       <p class="contact-intro">Conte um pouco sobre o que você imagina. Estamos aqui para ajudar a tornar sua celebração especial.</p>
       <p class="small mb-0 contact-note">Os campos com <span aria-hidden="true">*</span> são obrigatórios. Seus dados serão usados para atender ao seu contato.</p>
     </div>
-    <div class="col-12 col-lg-8">
+    <div class="col-12 col-lg-8 text-break">
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate [attr.aria-busy]="sending()">
         <fieldset [disabled]="sending()">
           <legend class="visually-hidden">Seus dados e sua mensagem</legend>
-          <div class="row g-4">
+          <div class="row g-3 g-md-4">
             <div class="col-12">
               <label for="contact-name" class="form-label">Nome <span aria-hidden="true">*</span></label>
               <input id="contact-name" class="form-control" type="text" formControlName="name" autocomplete="name" required minlength="2" maxlength="120" placeholder="Como podemos chamar você?" [class.is-invalid]="invalid('name')" [attr.aria-invalid]="invalid('name')" [attr.aria-describedby]="invalid('name') ? 'name-error' : null">
@@ -27,15 +27,15 @@
               @if (invalid('email')) { <div id="email-error" class="invalid-feedback">Informe um endereço de e-mail válido.</div> }
             </div>
             <div class="col-12">
-              <div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-2">
+              <div class="d-flex flex-column flex-sm-row flex-wrap justify-content-sm-between align-items-start align-items-sm-baseline gap-1 gap-sm-2 mb-2">
                 <label for="contact-message" class="form-label mb-0">Mensagem <span aria-hidden="true">*</span></label>
                 <small id="message-count" class="contact-note">{{ form.controls.message.value.length }} / 2000 caracteres</small>
               </div>
               <textarea id="contact-message" class="form-control" formControlName="message" rows="6" required maxlength="2000" placeholder="Conte sobre seu evento, suas ideias ou suas dúvidas…" [class.is-invalid]="invalid('message')" [attr.aria-invalid]="invalid('message')" [attr.aria-describedby]="invalid('message') ? 'message-count message-error' : 'message-count'"></textarea>
               @if (invalid('message')) { <div id="message-error" class="invalid-feedback">Escreva sua mensagem, com até 2000 caracteres.</div> }
             </div>
-            <div class="col-12">
-              <button class="btn contact-button rounded-pill px-4 py-3" type="submit" [disabled]="sending()">
+            <div class="col-12 d-grid d-sm-flex">
+              <button class="btn contact-button rounded-pill text-wrap text-break px-3 px-sm-4 py-3" type="submit" [disabled]="sending()">
                 @if (sending()) { <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Enviando… } @else { Enviar mensagem <span class="ms-2" aria-hidden="true">↗</span> }
               </button>
             </div>
@@ -43,7 +43,7 @@
         </fieldset>
         <div aria-live="polite" aria-atomic="true">
           @if (feedback()) {
-            <p class="alert mt-4 mb-0" [class.alert-success]="result() === 'success'" [class.alert-warning]="result() === 'warning'" [class.alert-danger]="result() === 'error'">{{ feedback() }}</p>
+            <p class="alert text-break mt-3 mt-md-4 mb-0" [class.alert-success]="result() === 'success'" [class.alert-warning]="result() === 'warning'" [class.alert-danger]="result() === 'error'">{{ feedback() }}</p>
           }
         </div>
       </form>

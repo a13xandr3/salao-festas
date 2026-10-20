@@ -1,34 +1,35 @@
 @if (visible()) {
-<section class="cancellation" id="cancelar-pre-reserva" aria-labelledby="cancellation-title">
-  <div class="row g-4 align-items-start">
-    <div class="col-12 col-lg-4">
-      <h3 id="cancellation-title">Precisa cancelar?</h3>
-      <p>Confirme o cancelamento da pré-reserva vinculada ao seu link individual. Ao confirmar, sua pré-reserva será removida e o período voltará a ficar livre.</p>
-    </div>
-    <div class="col-12 col-lg-8">
-      @if (!success()) {
-      <form [formGroup]="form" (ngSubmit)="submit()" novalidate [attr.aria-busy]="sending()">
-        <fieldset [disabled]="sending()">
-          <legend class="visually-hidden">Cancelamento da sua pré-reserva</legend>
-          <div class="row g-3">
-            <div class="col-12"><p>Protocolo: {{ form.controls.id.value }}</p></div>
-            <div class="col-12">
-              <div class="form-check my-2">
+  <section class="cancellation" id="cancelar-pre-reserva" aria-labelledby="cancellation-title">
+    <div class="row g-3 g-lg-4 align-items-start">
+      <div class="col-12 col-lg-4">
+        <h3 id="cancellation-title">Precisa cancelar?</h3>
+        <p class="mb-0">Confirme o cancelamento da pré-reserva vinculada ao seu link individual. Ao confirmar, sua pré-reserva será removida e o período voltará a ficar livre.</p>
+      </div>
+      <div class="col-12 col-lg-8">
+        @if (!success()) {
+          <form [formGroup]="form" (ngSubmit)="submit()" novalidate [attr.aria-busy]="sending()">
+            <fieldset [disabled]="sending()">
+              <legend class="visually-hidden">Cancelamento da sua pré-reserva</legend>
+              <p class="mb-3 text-break">Protocolo: <span class="d-block d-sm-inline">{{ form.controls.id.value }}</span></p>
+              <div class="form-check mb-3">
                 <input id="cancel-confirm" class="form-check-input" type="checkbox" formControlName="confirm" required [attr.aria-invalid]="form.controls.confirm.invalid && form.controls.confirm.touched">
-                <label class="form-check-label" for="cancel-confirm">Quero remover minha pré-reserva e liberar o período.</label>
+                <label class="form-check-label text-break" for="cancel-confirm">Quero remover minha pré-reserva e liberar o período.</label>
               </div>
-              @if (form.invalid && form.touched) { <p class="text-danger small">Marque a confirmação para cancelar sua pré-reserva.</p> }
-              <button type="submit" class="btn cancel-button rounded-pill px-4 py-3" [disabled]="sending()">{{ sending() ? 'Cancelando…' : 'Cancelar minha pré-reserva' }}</button>
-            </div>
-          </div>
-        </fieldset>
-      </form>
-      }
-      <div aria-live="polite" aria-atomic="true">
-        @if (feedback()) { <p class="alert mt-3 mb-0" [class.alert-success]="success()" [class.alert-danger]="!success()">{{ feedback() }}</p> }
+              @if (form.invalid && form.touched) {
+                <p class="text-danger small mb-3">Marque a confirmação para cancelar sua pré-reserva.</p>
+              }
+              <div class="d-grid d-sm-flex">
+                <button type="submit" class="btn cancel-button rounded-pill text-wrap text-break px-3 px-sm-4 py-3" [disabled]="sending()">{{ sending() ? 'Cancelando…' : 'Cancelar minha pré-reserva' }}</button>
+              </div>
+            </fieldset>
+          </form>
+        }
+        <div aria-live="polite" aria-atomic="true">
+          @if (feedback()) {
+            <p class="alert text-break mt-3 mb-0" [class.alert-success]="success()" [class.alert-danger]="!success()">{{ feedback() }}</p>
+          }
+        </div>
       </div>
     </div>
-  </div>
-</section>
-
+  </section>
 }
