@@ -78,3 +78,16 @@ p {
     width: 100%;
   }
 }
+
+.reservation-success {
+  width: min(30rem, calc(100% - 2rem));
+  padding: 1.5rem;
+  border: 0;
+  border-radius: 1rem;
+  color: #293126;
+  background: #eeece4;
+
+  &::backdrop {
+    background: #0008;
+  }
+}

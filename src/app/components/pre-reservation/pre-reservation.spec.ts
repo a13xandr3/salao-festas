@@ -5,6 +5,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { FormSubmitDelivery } from '../../services/formsubmit-delivery';
 import { PreReservation } from './pre-reservation';
 
+const dialogIsOpen = (element: HTMLElement) => element.querySelector('dialog')!.hasAttribute('open');
+
 describe('PreReservation', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
@@ -29,6 +31,9 @@ describe('PreReservation', () => {
     fixture.componentRef.setInput('selectedDate', '2028-02-28');
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
+    const dialog = element.querySelector<HTMLDialogElement>('dialog')!;
+    dialog.showModal = jest.fn(() => dialog.setAttribute('open', ''));
+    dialog.close = jest.fn(() => dialog.removeAttribute('open'));
     const fill = (endDate = '2028-02-29') => {
       for (const [id, value] of Object.entries({
         name: 'Maria Silva',
@@ -66,7 +71,7 @@ describe('PreReservation', () => {
     http.expectNone(rpcUrl('booking_create_reservation'));
     expect(element.textContent).toContain('pelo menos uma diária');
   });
-  it('accepts exactly 24 hours, prevents double submits and shows the receipt', () => {
+  it('accepts exactly 24 hours, prevents double submits and keeps reservation details out of the page', () => {
     const { submit, http, element, fill, fixture } = setup();
     fill();
     submit();
@@ -77,10 +82,19 @@ describe('PreReservation', () => {
     expect(element.querySelector<HTMLButtonElement>('button')!.disabled).toBe(true);
     request.flush({ ...testReservation, id: 'test-protocol' });
     fixture.detectChanges();
-    expect(element.textContent).toContain('aguardando pagamento');
+    expect(element.querySelector('.alert-success')).toBeNull();
+    expect(element.textContent).not.toContain('Baixar contrato PDF');
+    expect(element.textContent).not.toContain('Consultar Pix');
     expect(element.querySelector('form')).toBeNull();
     expect(element.querySelector('app-cancel-pre-reservation')).toBeNull();
-    expect(element.textContent).toContain('test-protocol');
+    expect(element.textContent).not.toContain('test-protocol');
+    expect(dialogIsOpen(element)).toBe(true);
+    expect(element.textContent).toContain('Pré-reserva feita com sucesso.');
+    expect(TestBed.inject(FormSubmitDelivery).submit).not.toHaveBeenCalled();
+    element.querySelector<HTMLButtonElement>('dialog button')!.click();
+    fixture.detectChanges();
+    expect(dialogIsOpen(element)).toBe(false);
+    expect(element.querySelector('form')).toBeNull();
     expect(TestBed.inject(FormSubmitDelivery).submit).toHaveBeenCalledTimes(1);
     expect(JSON.parse(sessionStorage.getItem('familia-tx-pre-reservation')!).id).toBe(
       'test-protocol',
@@ -97,4 +111,60 @@ describe('PreReservation', () => {
     expect(element.textContent).toContain('acabou de ficar indisponível');
     expect(element.querySelector<HTMLInputElement>('#pre-name')!.value).toBe('Maria Silva');
   });
+  it('keeps the form hidden after a previous success until another date is requested', () => {
+    sessionStorage.setItem('familia-tx-pre-reservation', JSON.stringify({
+      ...testReservation, cancellationToken: testReservation.notificationToken,
+      links: { contract: 'https://example.com/contract.pdf', pix: 'https://example.com/pix' },
+    }));
+    const { element } = setup();
+    expect(element.querySelector('form')).toBeNull();
+    expect(dialogIsOpen(element)).toBe(false);
+    expect(element.querySelector('.alert-success')).toBeNull();
+    expect(element.textContent).not.toContain(testReservation.id);
+  });
+
+  it('opens a fresh form for another date after submitting without redisplaying the receipt', () => {
+    const { submit, http, fill, fixture, element } = setup();
+    fill();
+    submit();
+    http.expectOne(rpcUrl('booking_create_reservation')).flush(testReservation);
+    fixture.detectChanges();
+    expect(element.querySelector('form')).toBeNull();
+    element.querySelector<HTMLButtonElement>('dialog button')!.click();
+    fixture.componentInstance.openForDate('2028-02-28');
+    fixture.detectChanges();
+    expect(element.querySelector('form')).toBeNull();
+    fixture.componentRef.setInput('selectedDate', '2028-03-02');
+    fixture.detectChanges();
+    expect(element.querySelector('form')).toBeNull();
+    fixture.componentInstance.openForDate('2028-03-02');
+    fixture.detectChanges();
+    expect(element.querySelector<HTMLInputElement>('#pre-start-date')!.value).toBe('2028-03-02');
+    expect(element.querySelector<HTMLInputElement>('#pre-end-date')!.value).toBe('2028-03-03');
+    expect(element.querySelector<HTMLInputElement>('#pre-name')!.value).toBe('');
+    expect(sessionStorage.getItem('familia-tx-pre-reservation')).toBeNull();
+  });
+
+  it('offers a retry without exposing details or creating another reservation if forwarding fails', () => {
+    const delivery = TestBed.inject(FormSubmitDelivery).submit as jest.Mock;
+    delivery.mockImplementationOnce(() => { throw new Error('Submission blocked'); });
+    const { submit, http, fill, fixture, element } = setup();
+    fill();
+    submit();
+    http.expectOne(rpcUrl('booking_create_reservation')).flush(testReservation);
+    fixture.detectChanges();
+    expect(element.querySelector('form')).toBeNull();
+    expect(element.textContent).not.toContain(testReservation.id);
+    element.querySelector<HTMLButtonElement>('dialog button')!.click();
+    fixture.detectChanges();
+    const retry = element.querySelector<HTMLButtonElement>('.btn-outline-dark')!;
+    expect(retry.textContent).toContain('Continuar envio');
+    retry.click();
+    http.expectOne(rpcUrl('booking_owned_reservation')).flush(testReservation);
+    fixture.detectChanges();
+    http.expectNone(rpcUrl('booking_create_reservation'));
+    expect(delivery).toHaveBeenCalledTimes(2);
+    expect(element.querySelector('.alert-success')).toBeNull();
+  });
+
 });

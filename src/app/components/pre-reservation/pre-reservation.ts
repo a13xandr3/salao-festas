@@ -6,11 +6,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   effect,
   inject,
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormSubmitDelivery } from '../../services/formsubmit-delivery';
 import {
@@ -59,12 +61,14 @@ function reservationError(status: number): string {
 export class PreReservation {
   readonly selectedDate = input('');
   readonly created = output<void>();
+  private readonly successDialog = viewChild.required<ElementRef<HTMLDialogElement>>('successDialog');
   private readonly delivery = inject(FormSubmitDelivery);
   private readonly session = inject(ReservationSession);
   private readonly api = inject(SupabaseApi);
   private readonly destroyRef = inject(DestroyRef);
   private readonly builder = inject(FormBuilder);
   protected readonly ready = signal(false);
+  protected readonly formVisible = signal(true);
   protected readonly sending = signal(false);
   protected readonly attempted = signal(false);
   protected readonly error = signal('');
@@ -98,7 +102,9 @@ export class PreReservation {
 
   constructor() {
     afterNextRender(() => {
-      this.receipt.set(this.session.read());
+      const receipt = this.session.read();
+      this.receipt.set(receipt);
+      this.formVisible.set(!receipt);
       this.ready.set(true);
     });
     effect(() => {
@@ -111,6 +117,29 @@ export class PreReservation {
       }
     });
   }
+  openForDate(date: string): void {
+    if (this.sending()) return;
+    const receipt = this.receipt();
+    if (receipt && date === DateTime.fromISO(receipt.startAt).setZone('America/Sao_Paulo').toISODate()) return;
+    if (receipt) this.session.clear(receipt.id);
+    this.receipt.set(null);
+    this.error.set('');
+    this.attempted.set(false);
+    this.form.reset({
+      startDate: date,
+      endDate: DateTime.fromISO(date).plus({ days: 1 }).toISODate()!,
+    });
+    this.formVisible.set(true);
+  }
+
+  protected closeSuccess(): void {
+    const dialog = this.successDialog().nativeElement;
+    if (!dialog.open) return;
+    dialog.close();
+    const receipt = this.receipt();
+    if (receipt) this.forward(receipt);
+  }
+
   protected invalid(field: keyof typeof this.form.controls): boolean {
     const control = this.form.controls[field];
     return control.invalid && control.touched;
@@ -118,7 +147,7 @@ export class PreReservation {
   private forward(receipt: ReservationReceipt): void {
     if (!receipt.submission) {
       this.error.set(
-        'Pré-reserva registrada. Não foi possível preparar o FormSubmit; guarde o protocolo e fale com a equipe.',
+        'Pré-reserva registrada. Não foi possível preparar o envio do e-mail. Tente continuar o envio ou fale com a equipe.',
       );
       return;
     }
@@ -156,7 +185,7 @@ export class PreReservation {
       });
   }
   protected submit(): void {
-    if (this.sending()) return;
+    if (this.sending() || !this.formVisible()) return;
     this.attempted.set(true);
     this.error.set('');
     this.form.markAllAsTouched();
@@ -176,10 +205,11 @@ export class PreReservation {
         next: (receipt) => {
           this.receipt.set(receipt);
           this.session.save(receipt);
+          this.formVisible.set(false);
           this.form.reset();
           this.attempted.set(false);
           this.created.emit();
-          this.forward(receipt);
+          this.successDialog().nativeElement.showModal();
         },
         error: (error) => {
           this.error.set(reservationError(error.status));
