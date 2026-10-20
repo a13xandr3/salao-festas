@@ -14,7 +14,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { FormSubmitDelivery } from '../../services/formsubmit-delivery';
+import { EmailService } from '../../shared/email/email.service';
 import {
   AbstractControl,
   FormBuilder,
@@ -61,8 +61,9 @@ function reservationError(status: number): string {
 export class PreReservation {
   readonly selectedDate = input('');
   readonly created = output<void>();
-  private readonly successDialog = viewChild.required<ElementRef<HTMLDialogElement>>('successDialog');
-  private readonly delivery = inject(FormSubmitDelivery);
+  private readonly successDialog =
+    viewChild.required<ElementRef<HTMLDialogElement>>('successDialog');
+  private readonly delivery = inject(EmailService);
   private readonly session = inject(ReservationSession);
   private readonly api = inject(SupabaseApi);
   private readonly destroyRef = inject(DestroyRef);
@@ -106,6 +107,7 @@ export class PreReservation {
       this.receipt.set(receipt);
       this.formVisible.set(!receipt);
       this.ready.set(true);
+      if (receipt) this.forward(receipt);
     });
     effect(() => {
       const date = this.selectedDate();
@@ -120,7 +122,11 @@ export class PreReservation {
   openForDate(date: string): void {
     if (this.sending()) return;
     const receipt = this.receipt();
-    if (receipt && date === DateTime.fromISO(receipt.startAt).setZone('America/Sao_Paulo').toISODate()) return;
+    if (
+      receipt &&
+      date === DateTime.fromISO(receipt.startAt).setZone('America/Sao_Paulo').toISODate()
+    )
+      return;
     if (receipt) this.session.clear(receipt.id);
     this.receipt.set(null);
     this.error.set('');
@@ -136,8 +142,6 @@ export class PreReservation {
     const dialog = this.successDialog().nativeElement;
     if (!dialog.open) return;
     dialog.close();
-    const receipt = this.receipt();
-    if (receipt) this.forward(receipt);
   }
 
   protected invalid(field: keyof typeof this.form.controls): boolean {
@@ -145,45 +149,28 @@ export class PreReservation {
     return control.invalid && control.touched;
   }
   private forward(receipt: ReservationReceipt): void {
-    if (!receipt.submission) {
-      this.error.set(
-        'Pré-reserva registrada. Não foi possível preparar o envio do e-mail. Tente continuar o envio ou fale com a equipe.',
-      );
-      return;
-    }
-    try {
-      this.delivery.submit(receipt.submission);
-    } catch {
-      this.error.set(
-        'Pré-reserva registrada. Clique em continuar envio para concluir a verificação no FormSubmit.',
-      );
-    }
-  }
-  protected resumeNotification(): void {
-    const receipt = this.receipt();
-    if (!receipt || this.sending()) return;
+    if (this.sending()) return;
     this.sending.set(true);
     this.error.set('');
-    this.api
-      .reservationForm(receipt.id, receipt.cancellationToken)
+    this.delivery
+      .send({ kind: 'reservation', id: receipt.id, token: receipt.cancellationToken })
       .pipe(
-        timeout(15000),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.sending.set(false)),
       )
       .subscribe({
-        next: (submission) => {
-          const next = { ...receipt, submission };
-          this.receipt.set(next);
-          this.session.save(next);
-          this.forward(next);
-        },
         error: () =>
           this.error.set(
-            'Não foi possível continuar o envio. Consulte a agenda ou fale com a equipe antes de tentar novamente.',
+            'Pré-reserva registrada. O envio está na fila e será retomado automaticamente.',
           ),
       });
   }
+
+  protected resumeNotification(): void {
+    const receipt = this.receipt();
+    if (receipt) this.forward(receipt);
+  }
+
   protected submit(): void {
     if (this.sending() || !this.formVisible()) return;
     this.attempted.set(true);
@@ -196,11 +183,7 @@ export class PreReservation {
     const values = this.form.getRawValue();
     this.api
       .createReservation(values)
-      .pipe(
-        timeout(30000),
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.sending.set(false)),
-      )
+      .pipe(timeout(30000), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (receipt) => {
           this.receipt.set(receipt);
@@ -208,10 +191,13 @@ export class PreReservation {
           this.formVisible.set(false);
           this.form.reset();
           this.attempted.set(false);
+          this.sending.set(false);
+          this.forward(receipt);
           this.created.emit();
           this.successDialog().nativeElement.showModal();
         },
         error: (error) => {
+          this.sending.set(false);
           this.error.set(reservationError(error.status));
           this.created.emit();
         },

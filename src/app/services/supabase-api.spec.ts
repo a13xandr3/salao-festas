@@ -4,7 +4,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { rpcUrl, testConfig, testReservation, testSite } from '../testing/supabase';
 import { SupabaseApi } from './supabase-api';
-import { reservationSubmission } from './reservation-submission';
 import { SupabaseConfig } from './site-config';
 
 const input = {
@@ -50,7 +49,7 @@ describe('Supabase integration on GitHub Pages', () => {
     });
   });
 
-  it('creates a receipt with native FormSubmit and resources inside the repository path', () => {
+  it('creates a receipt without SMTP credentials or browser-generated email forms', () => {
     const received = jest.fn();
     api.createReservation(input).subscribe(received);
     configure();
@@ -60,19 +59,12 @@ describe('Supabase integration on GitHub Pages', () => {
     const receipt = received.mock.calls[0][0];
     expect(receipt.cancellationToken).toBe(testReservation.notificationToken);
     expect(receipt.links).toEqual({ contract: testConfig.contractUrl, pix: testConfig.pixUrl });
-    expect(receipt.submission.fields._next).toBe(`${testSite}#pre-reserva`);
-    expect(receipt.submission.fields._autoresponse).toContain(
-      `${testSite}#cancelar-pre-reserva?id=${testReservation.id}&token=${testReservation.notificationToken}`,
-    );
-    expect(receipt.submission.fields._captcha).toBeUndefined();
-    expect(receipt.submission.action).not.toContain('/ajax/');
+    expect(receipt.submission).toBeUndefined();
   });
 
-  it('passes ownership token in the RPC body and builds the signed-contract form', () => {
+  it('passes ownership token in the RPC body and reads the reservation', () => {
     const received = jest.fn();
-    api
-      .reservationForm(testReservation.id, testReservation.notificationToken, true)
-      .subscribe(received);
+    api.ownedReservation(testReservation.id, testReservation.notificationToken).subscribe(received);
     configure();
     const request = rpc('booking_owned_reservation');
     expect(request.request.body).toEqual({
@@ -82,15 +74,14 @@ describe('Supabase integration on GitHub Pages', () => {
     });
     expect(request.request.urlWithParams).not.toContain(testReservation.notificationToken);
     request.flush(testReservation);
-    expect(received.mock.calls[0][0].fields._next).toBe(`${testSite}#contrato-enviado`);
-    expect(received.mock.calls[0][0].fields._autoresponse).toBeUndefined();
+    expect(received).toHaveBeenCalledWith(testReservation);
   });
 
   it('resumes a form without inserting another reservation', () => {
-    api.reservationForm(testReservation.id, testReservation.notificationToken).subscribe();
+    api.ownedReservation(testReservation.id, testReservation.notificationToken).subscribe();
     configure();
     const request = rpc('booking_owned_reservation');
-    expect(request.request.body.p_contract).toBe(false);
+    expect(request.request.body.p_contract).toBe(true);
     request.flush(testReservation);
     backend.expectNone(rpcUrl('booking_create_reservation'));
   });
@@ -138,20 +129,11 @@ describe('Supabase integration on GitHub Pages', () => {
     },
   );
 
-  it('uses the configured manager for regular contact delivery', () => {
-    const received = jest.fn();
-    api.contactEndpoint().subscribe(received);
-    configure();
-    expect(received).toHaveBeenCalledWith('https://formsubmit.co/ajax/a13xandr3ea%40gmail.com');
-  });
-
-  it('rejects unsafe contract resources', () => {
-    expect(() =>
-      reservationSubmission(
-        testReservation,
-        { ...testConfig, contractUrl: 'javascript:alert(1)' },
-        testSite,
-      ),
-    ).toThrow();
+  it('rejects unsafe resource URLs before a database request', () => {
+    const failure = jest.fn();
+    api.availability('2028-02').subscribe({ error: failure });
+    configure({ ...testConfig, contractUrl: 'javascript:alert(1)' });
+    expect(failure.mock.calls[0][0].status).toBe(503);
+    backend.expectNone((request) => request.url.includes('/rest/v1/'));
   });
 });

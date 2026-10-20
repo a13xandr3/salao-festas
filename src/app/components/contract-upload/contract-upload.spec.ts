@@ -1,4 +1,4 @@
-import { provideTestConfig, rpcUrl, testReservation } from '../../testing/supabase';
+import { emailUrl, provideTestConfig, rpcUrl, testReservation } from '../../testing/supabase';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -19,7 +19,7 @@ describe('ContractUpload', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
   });
-  it('loads the owner form and prepares a native multipart submission with the PDF attachment', async () => {
+  it('loads the owner reservation and sends the PDF through the Gmail function', async () => {
     history.replaceState(null, '', '/#enviar-contrato?id=my-id&token=' + 'a'.repeat(64));
     const fixture = TestBed.createComponent(ContractUpload);
     fixture.detectChanges();
@@ -30,8 +30,7 @@ describe('ContractUpload', () => {
     request.flush(testReservation);
     fixture.detectChanges();
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
-    expect(form.enctype).toBe('multipart/form-data');
-    expect(form.method).toBe('post');
+    expect(form.hasAttribute('action')).toBe(false);
     const input = form.querySelector<HTMLInputElement>('[name="attachment"]')!;
     const file = new File(['%PDF-test'], 'assinado.pdf', { type: 'application/pdf' });
     Object.defineProperty(file, 'slice', { value: () => ({ text: async () => '%PDF-' }) });
@@ -40,5 +39,12 @@ describe('ContractUpload', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(form.querySelector<HTMLButtonElement>('button')!.disabled).toBe(false);
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    const email = TestBed.inject(HttpTestingController).expectOne(emailUrl);
+    expect(email.request.body.get('kind')).toBe('contract');
+    expect(email.request.body.get('attachment').name).toBe('assinado.pdf');
+    email.flush({ sent: false, queued: true }, { status: 202, statusText: 'Accepted' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Contrato recebido para envio por e-mail');
   });
 });

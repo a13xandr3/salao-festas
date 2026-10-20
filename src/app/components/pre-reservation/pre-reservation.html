@@ -6,7 +6,7 @@
       <h3 id="pre-reservation-title">Faça sua pré-reserva.</h3>
       <p>Escolha as datas de entrada e saída. Cada diária tem <strong>24 horas</strong>, das 08h às 08h, sem limite de diárias consecutivas.</p>
 
-      <p class="small">Após registrar, você será encaminhado ao FormSubmit para concluir a verificação de envio. O cliente recebe uma resposta automática com os links de contrato, Pix e cancelamento.</p>
+      <p class="small">Após registrar, você recebe por e-mail as orientações de contrato, Pix e cancelamento.</p>
       <p class="small mb-0">Todos os campos são obrigatórios. Datas e horários seguem o horário de Brasília. Os dados serão usados para atender à sua reserva.</p>
     </div>
     <div class="col-12 col-lg-8">
@@ -54,13 +54,13 @@
   <div aria-live="polite" aria-atomic="true">
     @if (error()) { <p class="alert alert-danger mt-4 mb-0">{{ error() }}</p> }
     @if (error() && receipt()) {
-      <button type="button" class="btn btn-outline-dark rounded-pill my-2" (click)="resumeNotification()" [disabled]="sending()">Continuar envio pelo FormSubmit</button>
+      <button type="button" class="btn btn-outline-dark rounded-pill my-2" (click)="resumeNotification()" [disabled]="sending()">Tentar enviar e-mail novamente</button>
     }
   </div>
 </div>
 
 <dialog #successDialog class="reservation-success" aria-labelledby="reservation-success-title" aria-describedby="reservation-success-message" (cancel)="$event.preventDefault(); closeSuccess()">
   <h3 id="reservation-success-title">Pré-reserva feita com sucesso.</h3>
-  <p id="reservation-success-message">Continue para concluir o envio do e-mail com as orientações da sua pré-reserva.</p>
-  <button type="button" class="btn reserve-button rounded-pill px-4 py-3" autofocus (click)="closeSuccess()">Continuar</button>
+  <p id="reservation-success-message">As orientações da sua pré-reserva serão enviadas por e-mail.</p>
+  <button type="button" class="btn reserve-button rounded-pill px-4 py-3" autofocus (click)="closeSuccess()">Fechar</button>
 </dialog>

@@ -9,8 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { timeout } from 'rxjs';
-import { FormSubmitSubmission } from '../../services/formsubmit-delivery';
+import { finalize, timeout } from 'rxjs';
+import { EmailService } from '../../shared/email/email.service';
 import { reservationLink } from '../../services/reservation-link';
 @Component({
   selector: 'app-contract-upload',
@@ -23,31 +23,27 @@ import { reservationLink } from '../../services/reservation-link';
 export class ContractUpload {
   private readonly document = inject(DOCUMENT);
   private readonly api = inject(SupabaseApi);
+  private readonly delivery = inject(EmailService);
+  private link: { id: string; token: string } | null = null;
+  private attachment: File | null = null;
   private readonly destroyRef = inject(DestroyRef);
   protected readonly visible = signal(false);
   protected readonly returned = signal(false);
-  protected readonly submission = signal<FormSubmitSubmission | null>(null);
-  protected readonly fields = signal<[string, string][]>([]);
+  protected readonly loaded = signal(false);
+  protected readonly sending = signal(false);
   protected readonly fileValid = signal(false);
   protected readonly error = signal('');
   constructor() {
     afterNextRender(() => {
-      if (this.document.defaultView?.location.hash === '#contrato-enviado') {
-        this.visible.set(true);
-        this.returned.set(true);
-        return;
-      }
       const link = reservationLink(this.document, 'enviar-contrato');
       if (!link) return;
+      this.link = link;
       this.visible.set(true);
       this.api
-        .reservationForm(link.id, link.token, true)
+        .ownedReservation(link.id, link.token)
         .pipe(timeout(15000), takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: (submission) => {
-            this.submission.set(submission);
-            this.fields.set(Object.entries(submission.fields));
-          },
+          next: () => this.loaded.set(true),
           error: () =>
             this.error.set(
               'O link é inválido ou a pré-reserva foi cancelada. Entre em contato com a equipe.',
@@ -56,6 +52,7 @@ export class ContractUpload {
     });
   }
   protected async selectFile(event: Event): Promise<void> {
+    this.attachment = null;
     this.fileValid.set(false);
     this.error.set('');
     const input = event.target as HTMLInputElement;
@@ -72,6 +69,7 @@ export class ContractUpload {
         this.error.set('Selecione um PDF válido de até 10 MB.');
         return;
       }
+      this.attachment = file;
       this.fileValid.set(true);
     } catch {
       if (input.files?.[0] === file)
@@ -80,6 +78,20 @@ export class ContractUpload {
   }
 
   protected submit(event: Event): void {
-    if (!this.fileValid() || !this.submission()) event.preventDefault();
+    event.preventDefault();
+    if (!this.link || !this.attachment || !this.fileValid() || this.sending()) return;
+    this.sending.set(true);
+    this.error.set('');
+    this.delivery
+      .send({ kind: 'contract', ...this.link, attachment: this.attachment })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.sending.set(false)),
+      )
+      .subscribe({
+        next: () => this.returned.set(true),
+        error: () =>
+          this.error.set('Não foi possível enviar o contrato por e-mail. Tente novamente.'),
+      });
   }
 }

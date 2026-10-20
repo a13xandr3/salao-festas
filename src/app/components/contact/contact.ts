@@ -1,4 +1,4 @@
-import { FormSubmitDelivery } from '../../services/formsubmit-delivery';
+import { EmailService } from '../../shared/email/email.service';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom, timeout } from 'rxjs';
@@ -12,8 +12,7 @@ import { SupabaseApi } from '../../services/supabase-api';
   styleUrl: './contact.scss',
 })
 export class Contact {
-  private readonly delivery = inject(FormSubmitDelivery);
-  private sentPayload = '';
+  private readonly delivery = inject(EmailService);
   private readonly api = inject(SupabaseApi);
   private readonly builder = inject(FormBuilder);
   protected readonly sending = signal(false);
@@ -54,31 +53,30 @@ export class Contact {
     if (this.form.invalid) return;
     this.sending.set(true);
     const payload = this.form.getRawValue();
-    const signature = JSON.stringify(payload);
-    let emailAccepted = this.sentPayload === signature;
-
+    let registered = false;
     try {
-      if (!emailAccepted) {
-        const endpoint = await firstValueFrom(this.api.contactEndpoint().pipe(timeout(10000)));
-        await this.delivery.sendContact(endpoint, payload);
-        this.sentPayload = signature;
-        emailAccepted = true;
-      }
-
-      await firstValueFrom(this.api.createContact(payload).pipe(timeout(15000)));
+      const { id, deliveryToken } = await firstValueFrom(
+        this.api.createContact(payload).pipe(timeout(15000)),
+      );
+      registered = true;
+      const result = await firstValueFrom(
+        this.delivery.send({ kind: 'contact', id, token: deliveryToken }),
+      );
       this.result.set('success');
       this.feedback.set(
-        'Sua mensagem foi encaminhada para envio por e-mail e registrada. Obrigado pelo contato!',
+        result.sent
+          ? 'Sua mensagem foi registrada e enviada por e-mail. Obrigado pelo contato!'
+          : 'Sua mensagem foi registrada e será enviada por e-mail. Obrigado pelo contato!',
       );
       this.form.reset();
-      this.sentPayload = '';
     } catch {
-      this.result.set(emailAccepted ? 'warning' : 'error');
+      this.result.set(registered ? 'warning' : 'error');
       this.feedback.set(
-        emailAccepted
-          ? 'Sua mensagem foi encaminhada para envio por e-mail, mas não foi possível salvar o contato. Clique em enviar novamente para tentar apenas o registro, sem repetir o e-mail.'
-          : 'Não foi possível enviar sua mensagem. Seus campos foram preservados; tente novamente.',
+        registered
+          ? 'Contato registrado. O envio está na fila e será retomado automaticamente.'
+          : 'Não foi possível registrar sua mensagem. Seus campos foram preservados; tente novamente.',
       );
+      if (registered) this.form.reset();
     } finally {
       this.sending.set(false);
     }

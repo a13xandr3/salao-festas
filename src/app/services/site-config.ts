@@ -6,7 +6,6 @@ import { defer, map, shareReplay } from 'rxjs';
 export interface SupabaseConfig {
   supabaseUrl: string;
   supabasePublishableKey: string;
-  managerEmail: string;
   contractUrl: string;
   pixUrl: string;
 }
@@ -43,9 +42,6 @@ function validateConfig(config: SupabaseConfig, base: string): SupabaseConfig {
   }
   if (!isPublicKey(config.supabasePublishableKey)) {
     throw new Error('Use somente uma chave publishable ou anon.');
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.managerEmail)) {
-    throw new Error('E-mail do gestor inválido.');
   }
   return {
     ...config,

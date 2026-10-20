@@ -2,10 +2,12 @@ import { provideTestConfig, rpcUrl, testReservation } from '../../testing/supaba
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { FormSubmitDelivery } from '../../services/formsubmit-delivery';
+import { EmailService } from '../../shared/email/email.service';
+import { of, Subject, throwError } from 'rxjs';
 import { PreReservation } from './pre-reservation';
 
-const dialogIsOpen = (element: HTMLElement) => element.querySelector('dialog')!.hasAttribute('open');
+const dialogIsOpen = (element: HTMLElement) =>
+  element.querySelector('dialog')!.hasAttribute('open');
 
 describe('PreReservation', () => {
   beforeEach(async () => {
@@ -17,7 +19,7 @@ describe('PreReservation', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideTestConfig(),
-        { provide: FormSubmitDelivery, useValue: { submit: jest.fn() } },
+        { provide: EmailService, useValue: { send: jest.fn(() => of({ sent: true })) } },
       ],
     }).compileComponents();
   });
@@ -77,6 +79,7 @@ describe('PreReservation', () => {
     submit();
     submit();
     const request = http.expectOne(rpcUrl('booking_create_reservation'));
+    expect(TestBed.inject(EmailService).send).not.toHaveBeenCalled();
     expect(request.request.method).toBe('POST');
     expect(request.request.body.p_input.startDate).toBe('2028-02-28');
     expect(element.querySelector<HTMLButtonElement>('button')!.disabled).toBe(true);
@@ -90,12 +93,12 @@ describe('PreReservation', () => {
     expect(element.textContent).not.toContain('test-protocol');
     expect(dialogIsOpen(element)).toBe(true);
     expect(element.textContent).toContain('Pré-reserva feita com sucesso.');
-    expect(TestBed.inject(FormSubmitDelivery).submit).not.toHaveBeenCalled();
+    expect(TestBed.inject(EmailService).send).toHaveBeenCalledTimes(1);
     element.querySelector<HTMLButtonElement>('dialog button')!.click();
     fixture.detectChanges();
     expect(dialogIsOpen(element)).toBe(false);
     expect(element.querySelector('form')).toBeNull();
-    expect(TestBed.inject(FormSubmitDelivery).submit).toHaveBeenCalledTimes(1);
+    expect(TestBed.inject(EmailService).send).toHaveBeenCalledTimes(1);
     expect(JSON.parse(sessionStorage.getItem('familia-tx-pre-reservation')!).id).toBe(
       'test-protocol',
     );
@@ -112,11 +115,18 @@ describe('PreReservation', () => {
     expect(element.querySelector<HTMLInputElement>('#pre-name')!.value).toBe('Maria Silva');
   });
   it('keeps the form hidden after a previous success until another date is requested', () => {
-    sessionStorage.setItem('familia-tx-pre-reservation', JSON.stringify({
-      ...testReservation, cancellationToken: testReservation.notificationToken,
-      links: { contract: 'https://example.com/contract.pdf', pix: 'https://example.com/pix' },
-    }));
+    sessionStorage.setItem(
+      'familia-tx-pre-reservation',
+      JSON.stringify({
+        ...testReservation,
+        cancellationToken: testReservation.notificationToken,
+        links: { contract: 'https://example.com/contract.pdf', pix: 'https://example.com/pix' },
+      }),
+    );
     const { element } = setup();
+    expect(TestBed.inject(EmailService).send).toHaveBeenCalledWith(expect.objectContaining({
+      id: testReservation.id, token: testReservation.notificationToken,
+    }));
     expect(element.querySelector('form')).toBeNull();
     expect(dialogIsOpen(element)).toBe(false);
     expect(element.querySelector('.alert-success')).toBeNull();
@@ -146,8 +156,8 @@ describe('PreReservation', () => {
   });
 
   it('offers a retry without exposing details or creating another reservation if forwarding fails', () => {
-    const delivery = TestBed.inject(FormSubmitDelivery).submit as jest.Mock;
-    delivery.mockImplementationOnce(() => { throw new Error('Submission blocked'); });
+    const delivery = TestBed.inject(EmailService).send as jest.Mock;
+    delivery.mockReturnValueOnce(throwError(() => new Error('SMTP unavailable')));
     const { submit, http, fill, fixture, element } = setup();
     fill();
     submit();
@@ -158,13 +168,41 @@ describe('PreReservation', () => {
     element.querySelector<HTMLButtonElement>('dialog button')!.click();
     fixture.detectChanges();
     const retry = element.querySelector<HTMLButtonElement>('.btn-outline-dark')!;
-    expect(retry.textContent).toContain('Continuar envio');
+    expect(retry.textContent).toContain('Tentar enviar');
     retry.click();
-    http.expectOne(rpcUrl('booking_owned_reservation')).flush(testReservation);
     fixture.detectChanges();
     http.expectNone(rpcUrl('booking_create_reservation'));
     expect(delivery).toHaveBeenCalledTimes(2);
     expect(element.querySelector('.alert-success')).toBeNull();
+  });
+  it('does not email after a database failure', () => {
+    const { submit, http, fill } = setup();
+    fill();
+    submit();
+    http.expectOne(rpcUrl('booking_create_reservation')).flush({}, { status: 503, statusText: 'Unavailable' });
+    expect(TestBed.inject(EmailService).send).not.toHaveBeenCalled();
+  });
+
+  it('keeps the new reservation locked while queue acknowledgement is pending', () => {
+    const pending = new Subject<{ sent: boolean; queued: boolean }>();
+    const delivery = TestBed.inject(EmailService).send as jest.Mock;
+    delivery.mockReturnValue(pending);
+    const { submit, http, fill, fixture, element } = setup();
+    fill();
+    submit();
+    http.expectOne(rpcUrl('booking_create_reservation')).flush(testReservation);
+    fixture.detectChanges();
+    expect(delivery).toHaveBeenCalledTimes(1);
+    fixture.componentInstance.openForDate('2028-03-02');
+    fixture.detectChanges();
+    expect(element.querySelector('form')).toBeNull();
+    pending.next({ sent: false, queued: true });
+    pending.complete();
+    element.querySelector<HTMLButtonElement>('dialog button')!.click();
+    fixture.componentInstance.openForDate('2028-03-02');
+    fixture.detectChanges();
+    expect(element.querySelector('form')).not.toBeNull();
+    expect(delivery).toHaveBeenCalledTimes(1);
   });
 
 });

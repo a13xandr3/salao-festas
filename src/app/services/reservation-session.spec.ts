@@ -22,7 +22,6 @@ describe('ReservationSession', () => {
     const receipt: ReservationReceipt = {
       ...testReservation,
       cancellationToken: testReservation.notificationToken,
-      submission: { action: 'https://formsubmit.co/test@example.com', fields: {} },
       links: { contract: '', pix: '' },
     };
     session.save(receipt);

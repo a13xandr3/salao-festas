@@ -2,15 +2,14 @@
   <section id="enviar-contrato" aria-labelledby="contract-upload-title">
     <h3 id="contract-upload-title" class="h4 fw-semibold mb-3">Enviar contrato assinado</h3>
     @if (returned()) {
-      <p id="contrato-enviado" class="alert alert-success" role="status">Solicitação de envio concluída no FormSubmit. O recebimento e a conferência do contrato são feitos pela equipe do salão.</p>
-    } @else if (submission(); as form) {
+      <p id="contrato-enviado" class="alert alert-success" role="status">Contrato recebido para envio por e-mail. O recebimento e a conferência do contrato são feitos pela equipe do salão.</p>
+    } @else if (loaded()) {
       <p>Após efetuar o pagamento e assinar digitalmente o contrato, anexe o PDF abaixo. Ele será encaminhado por e-mail ao gestor.</p>
-      <form [attr.action]="form.action" method="POST" enctype="multipart/form-data" (submit)="submit($event)">
-        @for (field of fields(); track field[0]) { <input type="hidden" [name]="field[0]" [value]="field[1]"> }
+      <form (submit)="submit($event)" [attr.aria-busy]="sending()">
         <label for="signed-contract" class="form-label fw-medium">Contrato assinado em PDF *</label>
-        <input id="signed-contract" class="form-control mb-2" name="attachment" type="file" accept="application/pdf,.pdf" required (change)="selectFile($event)" aria-describedby="contract-file-help">
-        <p id="contract-file-help" class="small">Arquivo de até 10 MB. Conclua a verificação do FormSubmit para encaminhar o anexo.</p>
-        <button class="btn btn-dark rounded-pill px-4 py-3" type="submit" [disabled]="!fileValid()">Enviar contrato ao gestor</button>
+        <input id="signed-contract" class="form-control mb-2" name="attachment" type="file" accept="application/pdf,.pdf" required [disabled]="sending()" (change)="selectFile($event)" aria-describedby="contract-file-help">
+        <p id="contract-file-help" class="small">Arquivo de até 10 MB. O PDF será encaminhado por e-mail à equipe.</p>
+        <button class="btn btn-dark rounded-pill px-4 py-3" type="submit" [disabled]="!fileValid() || sending()">{{ sending() ? 'Enviando…' : 'Enviar contrato ao gestor' }}</button>
       </form>
     } @else if (!error()) { <p role="status">Consultando sua pré-reserva…</p> }
     @if (error()) { <p class="alert alert-danger mt-3" role="alert">{{ error() }}</p> }

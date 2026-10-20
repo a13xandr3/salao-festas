@@ -1,5 +1,3 @@
-import { FormSubmitSubmission } from './formsubmit-delivery';
-
 export interface ContactInput {
   name: string;
   phone: string;
@@ -26,11 +24,15 @@ export interface ReservationReceipt {
   startAt: string;
   endAt: string;
   cancellationToken: string;
-  submission: FormSubmitSubmission;
   links: { contract: string; pix: string };
 }
 
 export interface Availability {
   month: string;
   days: { date: string; status: 'free' | 'reserved' }[];
+}
+
+export interface ContactReceipt {
+  id: string;
+  deliveryToken: string;
 }
