@@ -1,13 +1,13 @@
 <section class="agenda-section" aria-labelledby="agenda-title">
-  <div class="agenda-heading">
+  <div class="agenda-heading text-break">
     <div>
       <p class="agenda-eyebrow">Planeje seu encontro</p>
       <h2 id="agenda-title">Sua próxima celebração começa por uma data.</h2>
       <p class="agenda-intro">Escolha uma data livre e faça sua pré-reserva em períodos de 24 horas.</p>
     </div>
-    <button type="button" class="refresh-button" (click)="load()" [disabled]="loading()">Atualizar agenda <span aria-hidden="true">↻</span></button>
+    <button type="button" class="refresh-button text-wrap text-break" (click)="load()" [disabled]="loading()">Atualizar agenda <span aria-hidden="true">↻</span></button>
   </div>
-  <div class="row g-4 g-xl-5 align-items-start">
+  <div class="row g-3 g-md-4 g-xl-5 align-items-start">
     <div class="col-12 col-lg-8">
       <div class="calendar-panel" [attr.aria-busy]="loading()">
         <div class="month-navigation">
@@ -15,15 +15,17 @@
           <h3 aria-live="polite">{{ monthLabel() }}</h3>
           <button type="button" (click)="changeMonth(1)" aria-label="Próximo mês">›</button>
         </div>
-        <div class="calendar-grid" role="group" aria-label="Selecione uma data">
-          @for (weekday of weekdays; track weekday) { <span class="weekday" aria-hidden="true">{{ weekday }}</span> }
-          @for (day of days(); track $index) {
-            @if (day.date) {
-              <button type="button" class="calendar-day" [class.free]="day.status === 'free'" [class.full]="day.status === 'reserved'" [class.selected]="selected() === day.date" [class.today]="day.date === now().date" [disabled]="day.past || loading() || error()" [attr.aria-label]="day.description" [attr.aria-pressed]="selected() === day.date" [attr.aria-current]="day.date === now().date ? 'date' : null" (click)="select(day.date)">
-                <span>{{ day.number }}</span><span class="day-state">{{ day.label }}</span>
-              </button>
-            } @else { <span aria-hidden="true"></span> }
-          }
+        <div class="calendar-scroll overflow-x-auto" tabindex="0" role="region" aria-label="Calendário de disponibilidade; role horizontalmente quando necessário">
+          <div class="calendar-grid" role="group" aria-label="Selecione uma data">
+            @for (weekday of weekdays; track weekday) { <span class="weekday" aria-hidden="true">{{ weekday }}</span> }
+            @for (day of days(); track $index) {
+              @if (day.date) {
+                <button type="button" class="calendar-day" [class.free]="day.status === 'free'" [class.full]="day.status === 'reserved'" [class.selected]="selected() === day.date" [class.today]="day.date === now().date" [disabled]="day.past || loading() || error()" [attr.aria-label]="day.description" [attr.aria-pressed]="selected() === day.date" [attr.aria-current]="day.date === now().date ? 'date' : null" (click)="select(day.date)">
+                  <span>{{ day.number }}</span><span class="day-state">{{ day.label }}</span>
+                </button>
+              } @else { <span aria-hidden="true"></span> }
+            }
+          </div>
         </div>
         <ul class="calendar-legend" aria-label="Legenda de disponibilidade">
           <li><span class="legend-dot free" aria-hidden="true"></span>Livre</li>
@@ -32,7 +34,7 @@
       </div>
     </div>
     <div class="col-12 col-lg-4">
-      <div class="day-details" aria-live="polite" aria-atomic="true">
+      <div class="day-details text-break" aria-live="polite" aria-atomic="true">
         <p class="agenda-eyebrow mb-2">Data selecionada</p>
         <h3>{{ selectedLabel() }}</h3>
         @if (loading()) { <p class="agenda-status" role="status">Consultando a disponibilidade…</p> }
@@ -40,14 +42,14 @@
           <p class="agenda-status" role="alert">Não foi possível consultar a agenda. Atualize para tentar novamente.</p>
         } @else if (selectedFree()) {
           <p class="agenda-status">Livre para pré-reserva. Cada diária corresponde a 24 horas, das 08h às 08h do dia seguinte. Você pode reservar várias diárias consecutivas.</p>
-          <a href="#pre-reserva" class="contact-link" (click)="openReservation()">Fazer pré-reserva nesta data <span aria-hidden="true">↗</span></a>
+          <a href="#pre-reserva" class="contact-link text-wrap text-break" (click)="openReservation()">Fazer pré-reserva nesta data <span aria-hidden="true">↗</span></a>
         } @else {
           <p class="agenda-status">{{ unavailableReason() }}</p>
         }
       </div>
     </div>
   </div>
-  <p class="agenda-note">A agenda consulta as pré-reservas a cada 30 segundos. Pagamento e contrato são acompanhados pela equipe do salão.</p>
+  <p class="agenda-note text-break">A agenda consulta as pré-reservas a cada 30 segundos. Pagamento e contrato são acompanhados pela equipe do salão.</p>
   <div [hidden]="linkAction()"><app-pre-reservation [selectedDate]="selected()" (created)="load()"></app-pre-reservation></div>
   <app-cancel-pre-reservation (cancelled)="load()"></app-cancel-pre-reservation>
   <app-contract-upload></app-contract-upload>

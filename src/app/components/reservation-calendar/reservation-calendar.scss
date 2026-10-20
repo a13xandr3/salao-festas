@@ -14,6 +14,7 @@
   margin-bottom: 2rem;
 }
 .agenda-heading > div {
+  min-width: 0;
   max-width: 40rem;
 }
 .agenda-eyebrow {
@@ -39,7 +40,8 @@ h2 {
   margin: 0;
 }
 button,
-a {
+a,
+.calendar-scroll {
   &:focus-visible {
     outline: 2px solid #303b2c;
     outline-offset: 3px;
@@ -59,6 +61,7 @@ button:disabled {
   opacity: 0.45;
 }
 .calendar-panel {
+  container-type: inline-size;
   background: #ffffff30;
   border: 1px solid #62694d33;
   border-radius: 1.25rem;
@@ -72,6 +75,9 @@ button:disabled {
   margin-bottom: 1.25rem;
 }
 .month-navigation h3 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: center;
   margin: 0;
   font-size: clamp(1rem, 2vw, 1.25rem);
   font-weight: 600;
@@ -87,7 +93,11 @@ button:disabled {
   height: 2.75rem;
   flex-shrink: 0;
 }
+.calendar-scroll {
+  padding: 0.25rem;
+}
 .calendar-grid {
+  min-width: 14rem;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: clamp(0.15rem, 0.5vw, 0.4rem);
@@ -113,6 +123,7 @@ button:disabled {
   border-radius: 0.65rem;
   color: #293126;
   font-size: 0.875rem;
+  padding: 0.25rem;
 }
 .calendar-day.free {
   background: #65754a18;
@@ -142,6 +153,8 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 0.75rem;
   color: #50574b;
 }
@@ -153,7 +166,10 @@ button:disabled {
 }
 .contact-link {
   display: inline-flex;
-  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  gap: 0.5rem;
   padding: 0.875rem 1.25rem;
   background: #303b2c;
   color: #fff;
@@ -166,23 +182,37 @@ button:disabled {
   font-size: 0.8rem;
   margin-top: 2rem;
 }
-@media (max-width: 359.98px) {
+@media (max-width: 575.98px) {
+  .month-navigation {
+    flex-wrap: wrap;
+  }
+  .month-navigation h3 {
+    order: -1;
+    width: 100%;
+  }
+  .month-navigation button {
+    width: 44px;
+    min-height: 44px;
+    height: auto;
+  }
   .calendar-panel {
     padding-inline: 0.5rem;
   }
-  .calendar-day {
-    min-height: 2.5rem;
+  .refresh-button,
+  .contact-link {
+    width: 100%;
   }
 }
 
 .day-state {
-  font-size: clamp(0.48rem, 1.35vw, 0.75rem);
+  font-size: 0.65rem;
   line-height: 1.4;
   letter-spacing: -0.025em;
   white-space: nowrap;
 }
 
 .legend-dot {
+  flex-shrink: 0;
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 50%;
@@ -190,4 +220,10 @@ button:disabled {
 }
 .legend-dot.full {
   background: #934e43;
+}
+
+@container (max-width: 28rem) {
+  .day-state {
+    display: none;
+  }
 }
