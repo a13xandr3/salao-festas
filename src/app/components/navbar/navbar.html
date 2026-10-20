@@ -1,15 +1,22 @@
 <header style="padding: 1rem clamp(1.25rem, 5vw, 4rem); border-bottom: 1px solid #29312618;">
-  <nav class="d-flex flex-wrap align-items-center justify-content-between gap-3" aria-label="Navegação principal">
-    <a href="#inicio" class="d-inline-flex align-items-center text-decoration-none" aria-label="Família Tx — início">
-      <img src="images/familia-tx-96.png" alt="Família Tx" width="72" height="72" style="object-fit: contain; mix-blend-mode: multiply;">
-    </a>
-    <ul class="d-flex flex-wrap align-items-center justify-content-center gap-2 gap-sm-3 gap-lg-4 list-unstyled m-0">
-      <li><a class="d-inline-block px-2 py-2 link-dark text-decoration-none" href="#inicio">Início</a></li>
-      <li><a class="d-inline-block px-2 py-2 link-dark text-decoration-none" href="#espacos">Espaços</a></li>
-      <li><a class="d-inline-block px-2 py-2 link-dark text-decoration-none" href="#celebracoes">Celebrações</a></li>
-      <li><a class="d-inline-block px-2 py-2 link-dark text-decoration-none" href="#servicos">Serviços</a></li>
-      <li><a class="d-inline-block px-2 py-2 link-dark text-decoration-none" href="#contato">Fale conosco</a></li>
-      <li><a class="d-inline-block px-2 py-2 link-dark text-decoration-none fw-medium" href="#agenda">Veja nossa agenda de reserva</a></li>
-    </ul>
+  <nav class="navbar navbar-expand-xl p-0" aria-label="Navegação principal" (keydown.escape)="menuOpen.set(false); menuToggle.focus()">
+    <div class="container-fluid p-0 gap-2">
+      <a href="#inicio" class="navbar-brand d-inline-flex align-items-center flex-shrink-0 m-0 p-0 text-decoration-none" aria-label="Família Tx — início" (click)="menuOpen.set(false)">
+        <img src="images/familia-tx-96.png" alt="Família Tx" class="img-fluid" width="72" height="72" style="object-fit: contain; mix-blend-mode: multiply;">
+      </a>
+      <button #menuToggle class="navbar-toggler flex-shrink-0 p-2" type="button" aria-controls="primary-navigation" [attr.aria-expanded]="menuOpen()" [attr.aria-label]="menuOpen() ? 'Fechar menu de navegação' : 'Abrir menu de navegação'" (click)="menuOpen.set(!menuOpen())">
+        <span class="navbar-toggler-icon" aria-hidden="true"></span>
+      </button>
+      <div id="primary-navigation" class="collapse navbar-collapse mw-100" [class.show]="menuOpen()">
+        <ul class="navbar-nav flex-wrap ms-xl-auto gap-1 gap-xl-2 pt-3 pt-xl-0 mw-100">
+          <li class="nav-item"><a class="nav-link text-wrap text-break px-2 py-3 link-dark" href="#inicio" (click)="menuOpen.set(false)">Início</a></li>
+          <li class="nav-item"><a class="nav-link text-wrap text-break px-2 py-3 link-dark" href="#espacos" (click)="menuOpen.set(false)">Espaços</a></li>
+          <li class="nav-item"><a class="nav-link text-wrap text-break px-2 py-3 link-dark" href="#celebracoes" (click)="menuOpen.set(false)">Celebrações</a></li>
+          <li class="nav-item"><a class="nav-link text-wrap text-break px-2 py-3 link-dark" href="#servicos" (click)="menuOpen.set(false)">Serviços</a></li>
+          <li class="nav-item"><a class="nav-link text-wrap text-break px-2 py-3 link-dark" href="#contato" (click)="menuOpen.set(false)">Fale conosco</a></li>
+          <li class="nav-item"><a class="nav-link text-wrap text-break px-2 py-3 link-dark fw-medium" href="#agenda" (click)="menuOpen.set(false)">Veja nossa agenda de reserva</a></li>
+        </ul>
+      </div>
+    </div>
   </nav>
 </header>
