@@ -1,7 +1,7 @@
 const { readFileSync } = require('node:fs');
 const { randomUUID, randomBytes } = require('node:crypto');
 const config = JSON.parse(readFileSync('public/app-config.json', 'utf8'));
-const origin = new URL('https://a13xandr3.github.io/salao-festas/').origin;
+const origin = new URL('https://www.salaoespacotx.com.br').origin;
 
 // Checks deployment without inserting records, claiming jobs or sending emails.
 (async () => {

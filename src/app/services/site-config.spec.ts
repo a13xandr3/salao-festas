@@ -34,4 +34,10 @@ describe('SiteConfig', () => {
   it('supports HTTP resources during local development', () => {
     expect(resourceUrl('/contract.pdf', 'http://localhost:4209/')).toBe('http://localhost:4209/contract.pdf');
   });
+  it('loads configuration and payment resources from the custom domain root', () => {
+    expect(new URL('app-config.json', testSite).href).toBe('https://www.salaoespacotx.com.br/app-config.json');
+    expect(resourceUrl('documents/contrato-de-locacao-espaco-tx.pdf', testSite)).toBe('https://www.salaoespacotx.com.br/documents/contrato-de-locacao-espaco-tx.pdf');
+    expect(resourceUrl('pix.html', testSite)).toBe('https://www.salaoespacotx.com.br/pix.html');
+  });
+
 });

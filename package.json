@@ -10,7 +10,7 @@
     "test:coverage": "jest --runInBand --coverage",
     "dev": "npm start",
     "generate:pix": "node scripts/generate-pix.cjs",
-    "build:pages": "ng build --configuration production --output-mode static --base-href /salao-festas/",
+    "build:pages": "ng build --configuration production --output-mode static --base-href /",
     "test:supabase": "node --test supabase/tests/*.test.cjs",
     "verify:supabase": "node scripts/verify-supabase.cjs",
     "test:email": "node --test supabase/functions/tests/*.test.mjs",

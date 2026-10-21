@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import { SiteConfig, SupabaseConfig } from '../services/site-config';
 
 export const testSupabaseUrl = 'https://example.supabase.co';
-export const testSite = 'https://a13xandr3.github.io/salao-festas/';
+export const testSite = 'https://www.salaoespacotx.com.br/';
 export const testConfig: SupabaseConfig = {
   supabaseUrl: testSupabaseUrl,
   supabasePublishableKey: 'sb_publishable_test',

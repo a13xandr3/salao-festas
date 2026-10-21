@@ -76,7 +76,7 @@ A resposta HTTP `202` significa **aceito na fila**, não entregue na caixa de en
 | `MAIL_ALLOWED_ORIGINS` | Origens permitidas, separadas por vírgula |
 | `MAIL_WORKER_TOKEN` | Token interno compartilhado entre Edge Function e Vault |
 
-No Pages atual, a origem é `https://a13xandr3.github.io`, e o site é `https://a13xandr3.github.io/salao-festas/`. Em desenvolvimento a origem permitida é `http://localhost:4209`. Ao trocar o domínio, atualize URL e origens nos secrets. A configuração SMTP de **Authentication** do Supabase não envia mensagens deste fluxo.
+No Pages atual, a origem é `https://www.salaoespacotx.com.br`, e o site é `https://www.salaoespacotx.com.br/`. Em desenvolvimento a origem permitida é `http://localhost:4209`. Ao trocar o domínio, atualize URL e origens nos secrets. A configuração SMTP de **Authentication** do Supabase não envia mensagens deste fluxo.
 
 As duas funções usam `verify_jwt = false`: o endpoint público valida os tokens individuais no banco; o worker exige seu próprio token privado. As RPCs de fila são exclusivas do papel interno `service_role`. Nenhuma credencial administrativa ou senha SMTP vai para o Angular. O schema `booking_private` não deve ser exposto pela Data API.
 
