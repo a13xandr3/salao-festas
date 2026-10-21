@@ -53,11 +53,11 @@ describe('Pix payment page', () => {
     select.dispatchEvent(new Event('change'));
     return select.selectedOptions[0];
   }
-  it('offers exactly one through ten daily stays and defaults to R$ 250.00', () => {
+  it('offers exactly one through ten daily stays and defaults to R$ 400.00', () => {
     const select = document.querySelector<HTMLSelectElement>('#pix-days')!;
     expect(Array.from(select.options, option => Number(option.value))).toEqual([1,2,3,4,5,6,7,8,9,10]);
     expect(select.disabled).toBe(false);
-    expect(document.querySelector('#pix-total')!.textContent).toMatch(/250,00/);
+    expect(document.querySelector('#pix-total')!.textContent).toMatch(/400,00/);
   });
   it.each(Array.from({ length: 10 }, (_, index) => index + 1))('updates and decodes the QR Code for %s days', (days) => {
     const option = selectDays(days);
@@ -71,12 +71,12 @@ describe('Pix payment page', () => {
     const decoded = decodeQr(new Uint8ClampedArray(png.data), png.width, png.height);
     expect(decoded.data).toBe(code);
     const data = fields(decoded.data);
-    expect(data['54']).toBe((days * 250).toFixed(2));
-    expect(fields(data['26'])['01']).toBe('14320430808');
+    expect(data['54']).toBe((days * 400).toFixed(2));
+    expect(fields(data['26'])['01']).toBe('29385898833');
     expect(data['53']).toBe('986');
-    expect(data['59']).toBe('ALEXANDRE ESTEVES ALVES');
+    expect(data['59']).toBe('KEILA APARECIDA TEIXEIRA CHAVES ESTEVES'.slice(0, 25));
     expect(data['63']).toBe(checksum(code.slice(0, -4)));
-    expect(Number(option.dataset['amount'])).toBe(days * 250);
+    expect(Number(option.dataset['amount'])).toBe(days * 400);
   });
   it('copies the selected total as a Pix payload and keeps key-only copying available', async () => {
     selectDays(10);
@@ -86,7 +86,7 @@ describe('Pix payment page', () => {
     expect(document.querySelector('#copy-status')!.textContent).toContain('com o valor');
     document.querySelector<HTMLButtonElement>('#copy-key')!.click();
     await Promise.resolve();
-    expect(writeText).toHaveBeenLastCalledWith('14320430808');
+    expect(writeText).toHaveBeenLastCalledWith('29385898833');
     expect(document.querySelector('#copy-status')!.textContent).toContain('manualmente');
   });
   it('selects the full Pix payload for manual copying if clipboard access is denied', async () => {

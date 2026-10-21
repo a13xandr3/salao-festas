@@ -18,11 +18,11 @@ function crc16(value) {
   const options = [];
   let firstCode;
   for (let days = 1; days <= 10; days++) {
-    const amount = days * 250;
+    const amount = days * 400;
     const body = field('00', '01') +
-      field('26', field('00', 'br.gov.bcb.pix') + field('01', '14320430808')) +
+      field('26', field('00', 'br.gov.bcb.pix') + field('01', '29385898833')) +
       field('52', '0000') + field('53', '986') + field('54', amount.toFixed(2)) +
-      field('58', 'BR') + field('59', 'ALEXANDRE ESTEVES ALVES') +
+      field('58', 'BR') + field('59', 'KEILA APARECIDA TEIXEIRA CHAVES ESTEVES'.slice(0, 25)) +
       field('60', 'TEODORO SAMPAIO') + field('62', field('05', '***')) + '6304';
     const code = body + crc16(body);
     firstCode ??= code;
@@ -38,5 +38,5 @@ function crc16(value) {
     .replace(/class="pix-qr" src="images\/pix-qr.png" width="\d+" height="\d+"/,
       'class="pix-qr" src="images/pix-qr.png" width="424" height="424"');
   writeFileSync(page, html);
-  console.log('Gerados 10 QR Codes Pix: R$ 250,00 a R$ 2.500,00.');
+  console.log('Gerados 10 QR Codes Pix: R$ 400,00 a R$ 4.000,00.');
 })().catch((error) => { console.error(error.message); process.exitCode = 1; });
