@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { messageFor } from '../_shared/email-message.mjs';
 import { handleEmail } from '../_shared/email-handler.mjs';
 import { handleWorker } from '../_shared/email-worker.mjs';
 import { createGmailSender, verifyGmailConnection } from '../_shared/gmail.mjs';
@@ -253,4 +254,39 @@ test('SMTP verification closes its connection without invoking sendMail', async 
   }));
   assert.equal(verified, true);
   assert.equal(closed, true);
+});
+
+test('customer HTML shows four labelled actions without visible raw URLs', () => {
+  const message = messageFor(record, 'reservation', 'customer', token, env);
+  const anchors = [...message.html.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)];
+  assert.deepEqual(anchors.map(([, , label]) => label), [
+    'Baixar Contrato em PDF', 'Chave Pix', 'Enviar contrato assinado', 'Cancelar pré-reserva',
+  ]);
+  assert.equal(anchors[0][1], `${origin}/salao-festas/documents/contrato.pdf`);
+  assert.equal(anchors[1][1], `${origin}/salao-festas/pix.html`);
+  assert.equal(anchors[2][1], `${origin}/salao-festas/#enviar-contrato?id=${id}&amp;token=${token}`);
+  assert.equal(anchors[3][1], `${origin}/salao-festas/#cancelar-pre-reserva?id=${id}&amp;token=${token}`);
+  const visible = message.html.replace(/<[^>]+>/g, '');
+  assert.ok(!visible.includes('https://'));
+  assert.ok(!visible.includes(token));
+  assert.ok(visible.includes('01/02/2038, 08:00'));
+  assert.ok(message.text.includes('#cancelar-pre-reserva?'));
+  for (const [, href, label] of anchors) {
+    assert.ok(message.text.includes(`${label}: ${href.replaceAll('&amp;', '&')}`));
+  }
+  assert.equal(message.to, record.email);
+  assert.equal(message.replyTo, env.MAIL_MANAGER_EMAIL);
+});
+test('customer HTML escapes record values and quoted link attributes', () => {
+  const message = messageFor({ ...record, name: `<img src=x onerror="alert('x')"> &`, id: '<protocol>' },
+    'reservation', 'customer', token, { ...env, CONTRACT_URL: '/contract?name="quoted"&file=1' });
+  assert.ok(!message.html.includes('<img'));
+  assert.ok(message.html.includes('&lt;img src=x onerror=&quot;alert(&#39;x&#39;)&quot;&gt; &amp;'));
+  assert.ok(message.html.includes('&lt;protocol&gt;'));
+  assert.ok(message.html.includes('%22quoted%22&amp;file=1'));
+});
+test('HTML actions reject unsafe resource links before delivery', () => {
+  for (const value of ['javascript:alert(1)', 'https://user:password@example.com/contract']) {
+    assert.throws(() => messageFor(record, 'reservation', 'customer', token, { ...env, CONTRACT_URL: value }), /URL inválida/);
+  }
 });
