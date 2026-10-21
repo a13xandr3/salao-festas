@@ -24,7 +24,7 @@ Edite `public/app-config.json`:
 {
   "supabaseUrl": "https://SEU-PROJETO.supabase.co",
   "supabasePublishableKey": "sb_publishable_SUA_CHAVE_PUBLICA",
-  "contractUrl": "documents/contrato-demonstracao.pdf",
+  "contractUrl": "documents/contrato-de-locacao-espaco-tx.pdf",
   "pixUrl": "pix.html"
 }
 ```
