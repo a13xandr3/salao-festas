@@ -136,4 +136,11 @@ describe('Supabase integration on GitHub Pages', () => {
     expect(failure.mock.calls[0][0].status).toBe(503);
     backend.expectNone((request) => request.url.includes('/rest/v1/'));
   });
+  it('propagates a configuration download failure without issuing an RPC', () => {
+    const failed = jest.fn(); api.availability('2028-02').subscribe({ error: failed });
+    backend.expectOne(testSite + 'app-config.json').flush({}, { status: 503, statusText: 'Unavailable' });
+    expect(failed.mock.calls[0][0].status).toBe(503);
+    backend.expectNone(request => request.url.includes('/rest/v1/'));
+  });
+
 });

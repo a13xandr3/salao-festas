@@ -106,4 +106,17 @@ describe('Contact with Gmail', () => {
     expect(element.textContent).toContain('será enviada');
     expect(element.textContent).not.toContain('registrada e enviada');
   });
+  it('rejects whitespace-only messages and malformed customer data without sending requests', () => {
+    const { fill, submit, element, http } = setup();
+    fill('   ');
+    const email = element.querySelector<HTMLInputElement>('#contact-email')!;
+    email.value = 'invalid'; email.dispatchEvent(new Event('input'));
+    const phone = element.querySelector<HTMLInputElement>('#contact-phone')!;
+    phone.value = '123'; phone.dispatchEvent(new Event('input'));
+    submit();
+    expect(element.querySelectorAll('.invalid-feedback')).toHaveLength(3);
+    expect(element.querySelector<HTMLButtonElement>('button')!.disabled).toBe(false);
+    http.expectNone(rpcUrl('booking_create_contact')); http.expectNone(emailUrl);
+  });
+
 });

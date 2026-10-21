@@ -7,6 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "jest",
+    "test:coverage": "jest --runInBand --coverage",
     "dev": "npm start",
     "build:pages": "ng build --configuration production --output-mode static --base-href /salao-festas/",
     "test:supabase": "node --test supabase/tests/*.test.cjs",

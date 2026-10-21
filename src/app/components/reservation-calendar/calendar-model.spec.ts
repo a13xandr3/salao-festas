@@ -27,4 +27,13 @@ describe('reservation calendar calculations', () => {
     expect(days.find((day) => day.date === '2028-02-28')?.past).toBe(true);
     expect(days.find((day) => day.date === '2028-02-29')?.past).toBe(false);
   });
+  it('starts a Sunday month without padding and ends on complete weeks', () => {
+    const days = monthDays('2026-02');
+    expect(days[0]).toBe('2026-02-01');
+    expect(days).toHaveLength(28);
+    const beforeCheckin = calendarDays('2026-02', null, { date: '2026-02-01', time: '07:59' });
+    expect(beforeCheckin[0].past).toBe(false);
+    expect(beforeCheckin[0].description).toBe('1 de fevereiro de 2026: —');
+  });
+
 });

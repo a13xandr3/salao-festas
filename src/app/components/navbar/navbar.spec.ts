@@ -46,4 +46,18 @@ describe('Navbar', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(toggle);
   });
+  it('closes the expanded menu for every destination including the brand', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const toggle = element.querySelector<HTMLButtonElement>('.navbar-toggler')!;
+    expect(toggle.getAttribute('aria-controls')).toBe('primary-navigation');
+    for (const link of Array.from(element.querySelectorAll<HTMLAnchorElement>('a'))) {
+      link.addEventListener('click', event => event.preventDefault());
+      toggle.click(); fixture.detectChanges();
+      expect(toggle.getAttribute('aria-label')).toBe('Fechar menu de navegação');
+      link.click(); fixture.detectChanges();
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      expect(toggle.getAttribute('aria-label')).toBe('Abrir menu de navegação');
+    }
+  });
+
 });

@@ -42,4 +42,23 @@ describe('CancelPreReservation', () => {
     fixture.detectChanges();
     expect(element.textContent).toContain('cancelada e o período foi liberado');
   });
+  it.each([404, 503])('preserves confirmation and allows retry after HTTP %s', (status) => {
+    history.replaceState(null, '', '/#cancelar-pre-reserva?id=my-id&token=' + 'a'.repeat(64));
+    const fixture = TestBed.createComponent(CancelPreReservation);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const cancelled = jest.fn(); fixture.componentInstance.cancelled.subscribe(cancelled);
+    element.querySelector<HTMLInputElement>('#cancel-confirm')!.click();
+    const submit = () => element.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    submit(); submit();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne(rpcUrl('booking_cancel_reservation')).flush({}, { status, statusText: 'Failure' });
+    fixture.detectChanges();
+    expect(element.textContent).toContain(status === 404 ? 'Confira o protocolo' : 'Seus dados foram preservados');
+    expect(element.querySelector<HTMLInputElement>('#cancel-confirm')!.checked).toBe(true);
+    expect(cancelled).not.toHaveBeenCalled();
+    submit(); http.expectOne(rpcUrl('booking_cancel_reservation')).flush({ cancelled: true });
+    fixture.detectChanges(); expect(cancelled).toHaveBeenCalledTimes(1);
+  });
+
 });

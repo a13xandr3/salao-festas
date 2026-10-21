@@ -39,4 +39,16 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
+  it('renders every public navigation destination inside the application', () => {
+    const fixture = TestBed.createComponent(App); fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    for (const link of Array.from(element.querySelectorAll<HTMLAnchorElement>('app-navbar a, app-footer a'))) {
+      const href = link.getAttribute('href')!;
+      expect(href.startsWith('#')).toBe(true);
+      expect(element.querySelector(href)).not.toBeNull();
+    }
+    expect(element.querySelectorAll('main')).toHaveLength(1);
+    expect(element.querySelector('app-pre-reservation form')).not.toBeNull();
+  });
+
 });

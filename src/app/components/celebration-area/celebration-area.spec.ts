@@ -19,4 +19,14 @@ describe('CelebrationArea', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+  it('describes the celebration space with an accessible image and heading', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const section = element.querySelector('section')!;
+    expect(element.querySelector('#' + section.getAttribute('aria-labelledby'))?.textContent).toContain('Memórias que ficam');
+    const image = element.querySelector('img')!;
+    expect(image.alt).toContain('Casal celebrando');
+    expect(image.getAttribute('loading')).toBe('lazy');
+    expect(element.textContent).toContain('casamentos, aniversários, encontros corporativos');
+  });
+
 });

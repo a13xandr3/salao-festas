@@ -19,4 +19,11 @@ describe('Footer', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+  it('shows the current copyright year and the site navigation anchors', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.footer-bottom')!.textContent).toContain(String(new Date().getFullYear()));
+    expect(Array.from(element.querySelectorAll('nav a'), a => a.getAttribute('href'))).toEqual(['#espacos', '#celebracoes', '#servicos', '#contato', '#agenda']);
+    expect(element.querySelector('.footer-brand')!.getAttribute('href')).toBe('#inicio');
+  });
+
 });

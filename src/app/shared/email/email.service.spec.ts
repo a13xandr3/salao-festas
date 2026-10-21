@@ -37,4 +37,16 @@ describe('EmailService', () => {
       .flush({ queued: true, sent: false }, { status: 202, statusText: 'Accepted' });
     expect(received).toHaveBeenCalledWith({ queued: true, sent: false });
   });
+  it('times out an unacknowledged request instead of waiting indefinitely', () => {
+    jest.useFakeTimers();
+    try {
+      const failed = jest.fn();
+      TestBed.inject(EmailService).send({ kind: 'contact', id: 'id', token: 'a'.repeat(64) }).subscribe({ error: failed });
+      const request = TestBed.inject(HttpTestingController).expectOne(emailUrl);
+      jest.advanceTimersByTime(30000);
+      expect(failed).toHaveBeenCalledWith(expect.objectContaining({ name: 'TimeoutError' }));
+      expect(request.cancelled).toBe(true);
+    } finally { jest.useRealTimers(); }
+  });
+
 });

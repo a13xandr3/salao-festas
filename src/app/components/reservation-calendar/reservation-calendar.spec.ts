@@ -16,6 +16,7 @@ describe('ReservationCalendar', () => {
   afterEach(() => {
     TestBed.inject(HttpTestingController).verify();
     jest.useRealTimers();
+    history.replaceState(null, '', '/');
   });
   function setup() {
     const fixture = TestBed.createComponent(ReservationCalendar);
@@ -114,6 +115,35 @@ describe('ReservationCalendar', () => {
     expect(element.querySelector('app-pre-reservation form')).not.toBeNull();
     expect(element.querySelector<HTMLInputElement>('#pre-start-date')!.value).toBe('2028-02-11');
     expect(element.querySelector<HTMLInputElement>('#pre-end-date')!.value).toBe('2028-02-12');
+  });
+
+  it('refreshes every thirty seconds and unsubscribes when destroyed', () => {
+    const { respond, fixture, http } = setup(); respond();
+    jest.advanceTimersByTime(30000); respond();
+    fixture.destroy(); jest.advanceTimersByTime(30000);
+    http.expectNone(rpcUrl('booking_availability'));
+  });
+  it('keeps past-month navigation and unavailable-date requests blocked', () => {
+    const { respond, fixture, http, element } = setup();
+    respond([{ date: '2028-02-10', start: '08:00', end: '24:00' }]);
+    const initialDate = element.querySelector<HTMLInputElement>('#pre-start-date')!.value;
+    fixture.componentInstance['changeMonth'](-1);
+    fixture.componentInstance['openReservation']();
+    expect(element.querySelector<HTMLInputElement>('#pre-start-date')!.value).toBe(initialDate);
+    http.expectNone(rpcUrl('booking_availability'));
+  });
+  it('returns to the current month selecting today and explains past check-ins', () => {
+    const { respond, fixture, element } = setup(); respond();
+    fixture.componentInstance['changeMonth'](1); respond([], '2028-03');
+    fixture.componentInstance['changeMonth'](-1); respond();
+    expect(element.querySelector('.calendar-day.selected')?.getAttribute('aria-label')).toContain('10 de fevereiro');
+    fixture.componentInstance['select']('2028-02-09'); fixture.detectChanges();
+    expect(element.querySelector('.day-details')?.textContent).toContain('já começou');
+  });
+  it('hides pre-reservation while handling an emailed contract action', () => {
+    history.replaceState(null, '', '/#enviar-contrato');
+    const { respond, element } = setup(); respond();
+    expect(element.querySelector('app-pre-reservation')!.parentElement!.hidden).toBe(true);
   });
 
 });

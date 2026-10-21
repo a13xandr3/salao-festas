@@ -4,7 +4,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { EmailService } from '../../shared/email/email.service';
 import { of, Subject, throwError } from 'rxjs';
-import { PreReservation } from './pre-reservation';
+import { FormControl, FormGroup } from '@angular/forms';
+import { PreReservation, reservationPeriod } from './pre-reservation';
 
 const dialogIsOpen = (element: HTMLElement) =>
   element.querySelector('dialog')!.hasAttribute('open');
@@ -203,6 +204,37 @@ describe('PreReservation', () => {
     fixture.detectChanges();
     expect(element.querySelector('form')).not.toBeNull();
     expect(delivery).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects invalid dates and accepts incomplete periods for required-field validation', () => {
+    const group = (startDate: string, endDate: string) => new FormGroup({ startDate: new FormControl(startDate), endDate: new FormControl(endDate) });
+    expect(reservationPeriod(group('', '2028-03-01'))).toBeNull();
+    expect(reservationPeriod(group('invalid', '2028-03-01'))).toEqual({ invalidPeriod: true });
+    expect(reservationPeriod(group('2028-03-01', 'invalid'))).toEqual({ invalidPeriod: true });
+    expect(reservationPeriod(group('2028-01-01', '2028-03-01'))).toEqual({ pastStart: true });
+  });
+  it('ignores retry and closing requests when no receipt or open dialog exists', () => {
+    const { fixture, element } = setup();
+    fixture.componentInstance['resumeNotification']();
+    fixture.componentInstance['closeSuccess']();
+    expect(TestBed.inject(EmailService).send).not.toHaveBeenCalled();
+    expect(element.querySelector('dialog')!.close).not.toHaveBeenCalled();
+  });
+  it('does not duplicate forwarding while an email acknowledgement is pending', () => {
+    const pending = new Subject<{ sent: boolean }>();
+    (TestBed.inject(EmailService).send as jest.Mock).mockReturnValue(pending);
+    const { fill, submit, http, fixture } = setup();
+    fill(); submit(); http.expectOne(rpcUrl('booking_create_reservation')).flush(testReservation);
+    fixture.componentInstance['resumeNotification']();
+    expect(TestBed.inject(EmailService).send).toHaveBeenCalledTimes(1);
+    pending.next({ sent: true }); pending.complete();
+  });
+  it.each([400, 429])('reports the reservation-specific HTTP %s error', (status) => {
+    const { fill, submit, http, fixture, element } = setup();
+    fill(); submit(); http.expectOne(rpcUrl('booking_create_reservation')).flush({}, { status, statusText: 'Failure' });
+    fixture.detectChanges();
+    expect(element.textContent).toContain(status === 400 ? 'Confira os dados' : 'Muitas tentativas');
+    expect(element.querySelector('form')).not.toBeNull();
   });
 
 });
