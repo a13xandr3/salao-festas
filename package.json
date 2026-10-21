@@ -9,6 +9,7 @@
     "test": "jest",
     "test:coverage": "jest --runInBand --coverage",
     "dev": "npm start",
+    "generate:pix": "node scripts/generate-pix.cjs",
     "build:pages": "ng build --configuration production --output-mode static --base-href /salao-festas/",
     "test:supabase": "node --test supabase/tests/*.test.cjs",
     "verify:supabase": "node scripts/verify-supabase.cjs",
@@ -57,6 +58,9 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "jest-preset-angular": "^17.0.0",
+    "jsqr": "1.4.0",
+    "pngjs": "7.0.0",
+    "qrcode": "1.5.4",
     "typescript": "~5.9.2"
   }
 }
