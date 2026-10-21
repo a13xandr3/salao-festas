@@ -260,10 +260,10 @@ test('customer HTML shows four labelled actions without visible raw URLs', () =>
   const message = messageFor(record, 'reservation', 'customer', token, env);
   const anchors = [...message.html.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)];
   assert.deepEqual(anchors.map(([, , label]) => label), [
-    'Baixar Contrato em PDF', 'Chave Pix', 'Enviar contrato assinado', 'Cancelar pré-reserva',
+    '① Chave Pix', '② Baixar Contrato em PDF', '③ Enviar contrato assinado', 'Cancelar pré-reserva',
   ]);
-  assert.equal(anchors[0][1], `${origin}/salao-festas/documents/contrato.pdf`);
-  assert.equal(anchors[1][1], `${origin}/salao-festas/pix.html`);
+  assert.equal(anchors[0][1], `${origin}/salao-festas/pix.html`);
+  assert.equal(anchors[1][1], `${origin}/salao-festas/documents/contrato.pdf`);
   assert.equal(anchors[2][1], `${origin}/salao-festas/#enviar-contrato?id=${id}&amp;token=${token}`);
   assert.equal(anchors[3][1], `${origin}/salao-festas/#cancelar-pre-reserva?id=${id}&amp;token=${token}`);
   const visible = message.html.replace(/<[^>]+>/g, '');
@@ -288,5 +288,19 @@ test('customer HTML escapes record values and quoted link attributes', () => {
 test('HTML actions reject unsafe resource links before delivery', () => {
   for (const value of ['javascript:alert(1)', 'https://user:password@example.com/contract']) {
     assert.throws(() => messageFor(record, 'reservation', 'customer', token, { ...env, CONTRACT_URL: value }), /URL inválida/);
+  }
+});
+
+test('customer HTML and text include the deadline, access conditions and manager signature', () => {
+  const message = messageFor(record, 'reservation', 'customer', token, env);
+  for (const body of [message.html.replace(/<[^>]+>/g, ''), message.text]) {
+    for (const text of [
+      'até 6 horas antes do início da reserva',
+      'As chaves do espaço estarão disponíveis após a confirmação do pagamento',
+      'recebimento do respectivo contrato assinado',
+      'O contrato deve ser assinado digitalmente',
+      'gov.br', '+55 (18) 9 9655-5494', env.MAIL_MANAGER_EMAIL,
+      'Desejo que seus momentos no espaço TX sejam cheios de alegria e realizações.',
+    ]) assert.ok(body.includes(text), `Missing guidance: ${text}`);
   }
 });

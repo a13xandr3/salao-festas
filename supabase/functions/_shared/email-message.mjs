@@ -50,15 +50,22 @@ export function messageFor(record, kind, role, token, env, attachment) {
   const individual = (action) =>
     `${site}#${action}?${new URLSearchParams({ id: record.id, token })}`;
   const links = [
-    ['Baixar Contrato em PDF', publicUrl(env.CONTRACT_URL, site)],
-    ['Chave Pix', publicUrl(env.PIX_URL, site)],
-    ['Enviar contrato assinado', individual('enviar-contrato')],
+    ['① Chave Pix', publicUrl(env.PIX_URL, site)],
+    ['② Baixar Contrato em PDF', publicUrl(env.CONTRACT_URL, site)],
+    ['③ Enviar contrato assinado', individual('enviar-contrato')],
     ['Cancelar pré-reserva', individual('cancelar-pre-reserva')],
   ];
   const actions = links.map(([label, href], index) => `
     <tr><td style="padding:6px 0;">
       <a href="${escapeHtml(href)}" style="display:block;padding:14px 20px;border:1px solid #62694d;border-radius:12px;text-align:center;text-decoration:none;font-size:15px;line-height:1.5;${index === 0 ? 'background:#303b2c;color:#ffffff;' : 'color:#303b2c;'}">${label}</a>
     </td></tr>`).join('');
+  const notices = [
+    'O pagamento via Pix e o envio do contrato assinado devem ser concluídos até 6 horas antes do início da reserva.',
+    'As chaves do espaço estarão disponíveis após a confirmação do pagamento e o recebimento do respectivo contrato assinado.',
+    'O contrato deve ser assinado digitalmente. Para uma assinatura simples e rápida, utilize o gov.br.',
+  ];
+  const farewell = 'Desejo que seus momentos no espaço TX sejam cheios de alegria e realizações.';
+  const phone = '+55 (18) 9 9655-5494';
   const html = `<!doctype html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sua pré-reserva — Espaço TX</title></head>
@@ -76,11 +83,18 @@ export function messageFor(record, kind, role, token, env, attachment) {
           <strong>Protocolo</strong><br>${escapeHtml(record.id)}<br><br>
           <strong>Período · horário de Brasília</strong><br>${escapeHtml(format(record.startAt))} até ${escapeHtml(format(record.endAt))}
         </td></tr></table>
-        <p style="margin:24px 0 12px;font-size:15px;line-height:1.7;">Acesse o contrato, consulte a chave Pix e envie o documento assinado pelos links abaixo.</p>
+        <p style="margin:24px 0 12px;font-size:15px;line-height:1.7;">Siga os passos ①, ② e ③: consulte a chave Pix, baixe o contrato e envie o documento assinado.</p>
         <table role="presentation" style="width:100%;border-collapse:collapse;">${actions}</table>
+        <table role="presentation" style="width:100%;margin-top:24px;border-collapse:collapse;background:#f4f3ed;"><tr><td style="padding:18px;font-size:14px;line-height:1.8;">
+          <strong>Orientações importantes</strong>
+          ${notices.map((notice) => `<p style="margin:12px 0 0;">${escapeHtml(notice)}</p>`).join('')}
+          <p style="margin:12px 0 0;">Havendo dúvidas, responda a este e-mail ou entre em contato pelo telefone ${phone}.</p>
+        </td></tr></table>
         <p style="margin:24px 0 0;font-size:12px;line-height:1.7;color:#62694d;">Os links de envio e cancelamento são individuais. Guarde este e-mail e evite compartilhá-los.</p>
       </td></tr>
-      <tr><td style="padding:20px 24px;border-top:1px solid #e5e5da;font-size:13px;line-height:1.7;color:#62694d;">Família TX · Um espaço para celebrar bons momentos.</td></tr>
+      <tr><td style="padding:20px 24px;border-top:1px solid #e5e5da;font-size:13px;line-height:1.7;color:#62694d;"><p style="margin:0 0 16px;">${farewell}</p>
+        <strong>Gestão Espaço TX · Família Teixeira</strong><br>
+        <span style="overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(manager)}</span><br>${phone}</td></tr>
     </table>
   </td></tr></table>
 </body></html>`;
@@ -89,6 +103,6 @@ export function messageFor(record, kind, role, token, env, attachment) {
     replyTo: manager,
     subject: 'Sua pré-reserva — Espaço TX',
     html,
-    text: `Olá, ${record.name}!\nSua pré-reserva foi registrada e aguarda confirmação de pagamento.\n\n${details}\n\n${links.map(([label, href]) => `${label}: ${href}`).join('\n')}`,
+    text: `Olá, ${record.name}!\nSua pré-reserva foi registrada e aguarda confirmação de pagamento.\n\n${details}\n\n${links.map(([label, href]) => `${label}: ${href}`).join('\n')}\n\nOrientações importantes\n${notices.join('\n\n')}\n\nHavendo dúvidas, responda a este e-mail ou entre em contato pelo telefone ${phone}.\n\n${farewell}\nGestão Espaço TX · Família Teixeira\n${manager}\n${phone}`,
   };
 }
