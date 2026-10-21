@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { version } from '../../../../package.json';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -8,4 +9,5 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 })
 export class Footer {
   protected readonly year = new Date().getFullYear();
+  protected readonly version = version;
 }
