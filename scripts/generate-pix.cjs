@@ -34,7 +34,7 @@ function crc16(value) {
   const html = readFileSync(page, 'utf8')
     .replace(/<!-- PIX_OPTIONS_START -->[\s\S]*?<!-- PIX_OPTIONS_END -->/,
       `<!-- PIX_OPTIONS_START -->\n${options.join('\n')}\n      <!-- PIX_OPTIONS_END -->`)
-    .replace(/id="pix-code" type="text" value="[^"]*"/, `id="pix-code" type="text" value="${firstCode}"`)
+    .replace(/(<textarea id="pix-code"[^>]*>)[\s\S]*?(<\/textarea>)/, `$1${firstCode}$2`)
     .replace(/class="pix-qr" src="images\/pix-qr.png" width="\d+" height="\d+"/,
       'class="pix-qr" src="images/pix-qr.png" width="424" height="424"');
   writeFileSync(page, html);

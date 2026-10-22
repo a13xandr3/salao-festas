@@ -61,7 +61,7 @@ describe('Pix payment page', () => {
   });
   it.each(Array.from({ length: 10 }, (_, index) => index + 1))('updates and decodes the QR Code for %s days', (days) => {
     const option = selectDays(days);
-    const code = document.querySelector<HTMLInputElement>('#pix-code')!.value;
+    const code = document.querySelector<HTMLTextAreaElement>('#pix-code')!.value;
     const image = document.querySelector<HTMLImageElement>('.pix-qr')!;
     expect(image.getAttribute('src')).toBe(option.dataset['qr']);
     expect(image.hidden).toBe(true);
@@ -82,7 +82,7 @@ describe('Pix payment page', () => {
     selectDays(10);
     document.querySelector<HTMLButtonElement>('#copy-code')!.click();
     await Promise.resolve();
-    expect(writeText).toHaveBeenLastCalledWith(document.querySelector<HTMLInputElement>('#pix-code')!.value);
+    expect(writeText).toHaveBeenLastCalledWith(document.querySelector<HTMLTextAreaElement>('#pix-code')!.value);
     expect(document.querySelector('#copy-status')!.textContent).toContain('com o valor');
     document.querySelector<HTMLButtonElement>('#copy-key')!.click();
     await Promise.resolve();
@@ -94,7 +94,7 @@ describe('Pix payment page', () => {
     selectDays(3);
     document.querySelector<HTMLButtonElement>('#copy-code')!.click();
     await Promise.resolve();
-    const input = document.querySelector<HTMLInputElement>('#pix-code')!;
+    const input = document.querySelector<HTMLTextAreaElement>('#pix-code')!;
     expect(document.activeElement).toBe(input);
     expect(input.selectionEnd).toBe(input.value.length);
     expect(document.querySelector('#copy-status')!.textContent).toContain('copiar manualmente');
@@ -103,7 +103,7 @@ describe('Pix payment page', () => {
     const image = document.querySelector<HTMLImageElement>('.pix-qr')!;
     image.dispatchEvent(new Event('error'));
     expect(image.hidden).toBe(true);
-    expect(document.querySelector('#copy-status')!.textContent).toContain('Copiar Pix com o valor');
+    expect(document.querySelector('#copy-status')!.textContent).toContain('COPIAR CÓDIGO');
     selectDays(2);
     expect(document.querySelector('#copy-status')!.textContent).toBe('');
   });

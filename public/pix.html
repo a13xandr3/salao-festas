@@ -7,43 +7,42 @@
   <title>Pagamento por Pix — Espaço TX</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: clamp(1rem, 5vw, 3rem); background: #eeece4; color: #293126; font: 1rem/1.7 Arial, Helvetica, sans-serif; }
-    main { max-width: 36rem; margin: auto; padding: clamp(1rem, 5vw, 2rem); border: 1px solid #62694d33; border-radius: 1.25rem; background: #fff; overflow-wrap: anywhere; }
-    .brand { color: #62694d; font-size: .8rem; font-weight: 700; letter-spacing: .1em; }
-    h1 { font-size: clamp(1.5rem, 5vw, 2rem); line-height: 1.3; }
-    h2 { font-size: 1.125rem; }
-    figure { margin: 1.5rem 0; text-align: center; }
+    body { margin: 0; background: #fff; color: #555; font: 1rem/1.5 Arial, Helvetica, sans-serif; }
+    main { width: 100%; max-width: 36rem; margin: auto; padding: clamp(1rem, 5vw, 2rem); text-align: center; overflow-wrap: anywhere; }
+    h1 { margin: 0 0 1rem; font-size: 1.25rem; color: #292d62; }
+    .brand { margin: 0 0 .25rem; font-size: .75rem; letter-spacing: .08em; }
+    .payment-options { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5rem; }
+    select { max-width: 10rem; padding: .5rem; border: 1px solid #bbb; background: #fff; color: #555; }
+    input, select, textarea, button { min-width: 0; min-height: 44px; font: inherit; border-radius: .5rem; }
+    figure { margin: 1.5rem 0 1rem; }
     .pix-qr[hidden] { display: none; }
-    .pix-qr { display: block; width: 100%; max-width: 280px; height: auto; margin: auto; }
-    figcaption { margin-top: .5rem; color: #50574b; font-size: .875rem; }
-    dl { padding: 1rem; background: #f4f3ed; border-radius: .75rem; }
-    dt { margin-top: .75rem; font-weight: 700; }
-    dt:first-child { margin-top: 0; }
-    dd { margin: 0; }
-    label { display: block; font-weight: 700; margin-bottom: .5rem; }
-    input, select, button { width: 100%; min-width: 0; min-height: 48px; border-radius: .75rem; font: inherit; }
-    input, select { padding: .75rem; border: 1px solid #62694d88; background: #fff; color: #293126; }
-    button { margin-top: .75rem; padding: .875rem; border: 0; background: #303b2c; color: #fff; cursor: pointer; overflow-wrap: anywhere; }
-    button:hover { background: #414f3c; }
-    :focus-visible { outline: 2px solid #62694d; outline-offset: 3px; }
-    #copy-status { min-height: 1.7em; color: #50574b; }
-    ol { padding-left: 1.25rem; }
-    li { margin-bottom: .5rem; }
-    footer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #62694d33; font-size: .875rem; color: #50574b; }
-    a { color: #303b2c; }
+    .pix-qr { display: block; width: 100%; max-width: 20rem; height: auto; margin: auto; border: 2px solid #111; border-radius: 1rem; }
+    figcaption { margin-top: 1rem; }
+    #daily-rate { margin: .5rem 0; font-size: .875rem; }
+    .total { margin: .5rem 0; font-size: 1.125rem; }
+    .payment-help { margin: 1.5rem 0 1rem; }
+    #pix-code { display: block; width: 100%; height: 10rem; padding: 1rem; resize: vertical; border: 0; border-radius: .875rem; background: #eee; color: #111; text-align: center; overflow-wrap: anywhere; }
+    button { width: 100%; padding: .875rem; margin-top: .75rem; border: 0; border-radius: 1.75rem; background: #292d62; color: #fff; cursor: pointer; overflow-wrap: anywhere; }
+    button:hover { background: #3b407e; }
+    :focus-visible { outline: 2px solid #292d62; outline-offset: 3px; }
+    #copy-status { margin: .5rem 0; min-height: 1.5em; font-size: .875rem; }
+    details { margin-top: 1rem; font-size: .875rem; text-align: left; }
+    summary { cursor: pointer; text-align: center; }
+    dl { margin: 1rem 0; }
+    dt { font-weight: 700; }
+    dd { margin: 0 0 .5rem; }
+    #pix-key { width: 100%; padding: .5rem; border: 1px solid #bbb; }
+    footer { margin-top: 2rem; }
+    a { color: #292d62; }
+    .close-link { display: inline-block; padding: .75rem; text-decoration: none; text-transform: uppercase; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   </style>
 </head>
 <body>
   <main>
     <p class="brand">ESPAÇO TX · FAMÍLIA TEIXEIRA</p>
     <h1>Pagamento por Pix</h1>
-    <p>Copie a chave e faça o pagamento pelo aplicativo ou site do seu banco.</p>
-    <dl>
-      <dt>Favorecido</dt>
-      <dd>Keila Aparecida Teixeira Chaves Esteves</dd>
-      <dt>Tipo de chave</dt>
-      <dd>CPF</dd>
-    </dl>
+    <div class="payment-options">
     <label for="pix-days">Quantidade de diárias</label>
     <select id="pix-days" aria-describedby="daily-rate" disabled>
       <!-- PIX_OPTIONS_START -->
@@ -59,16 +58,20 @@
       <option value="10" data-amount="4000" data-code="00020126330014br.gov.bcb.pix01112938589883352040000530398654074000.005802BR5925KEILA APARECIDA TEIXEIRA 6015TEODORO SAMPAIO62070503***6304ACBB" data-qr="images/pix-qr-10.png">10 diárias</option>
       <!-- PIX_OPTIONS_END -->
     </select>
+    </div>
     <p id="daily-rate">Valor da diária: R$ 400,00.</p>
-    <p aria-live="polite" aria-atomic="true"><strong>Total: <output id="pix-total" for="pix-days">R$ 400,00</output></strong></p>
     <figure>
       <img class="pix-qr" src="images/pix-qr.png" width="424" height="424" alt="QR Code Pix para pagamento a Keila Aparecida Teixeira Chaves Esteves" aria-describedby="qr-help">
-      <figcaption id="qr-help">Escaneie pelo aplicativo do seu banco. O QR Code inclui o total das diárias selecionadas.</figcaption>
+      <figcaption id="qr-help">Favorecido: Keila Aparecida Teixeira Chaves Esteves</figcaption>
     </figure>
-    <label for="pix-code">Pix Copia e Cola com o valor</label>
-    <input id="pix-code" type="text" value="00020126330014br.gov.bcb.pix0111293858988335204000053039865406400.005802BR5925KEILA APARECIDA TEIXEIRA 6015TEODORO SAMPAIO62070503***63046A5B" readonly spellcheck="false" aria-describedby="copy-status">
-    <button id="copy-code" type="button">Copiar Pix com o valor</button>
+    <p class="total" aria-live="polite" aria-atomic="true"><strong>Total: <output id="pix-total" for="pix-days">R$ 400,00</output></strong></p>
+    <p class="payment-help">Realize o pagamento escaneando o QR Code no aplicativo do seu banco ou copie o código abaixo:</p>
+    <label for="pix-code" class="visually-hidden">Pix Copia e Cola com o valor</label>
+    <textarea id="pix-code" readonly spellcheck="false" aria-describedby="copy-status">00020126330014br.gov.bcb.pix0111293858988335204000053039865406400.005802BR5925KEILA APARECIDA TEIXEIRA 6015TEODORO SAMPAIO62070503***63046A5B</textarea>
+    <button id="copy-code" type="button">COPIAR CÓDIGO</button>
     <p id="copy-status" role="status" aria-live="polite"></p>
+    <details>
+      <summary>Instruções e chave Pix</summary>
     <label for="pix-key">Chave Pix</label>
     <input id="pix-key" type="text" value="29385898833" readonly spellcheck="false" aria-describedby="copy-status">
     <button id="copy-key" type="button">Copiar chave Pix</button>
@@ -82,9 +85,10 @@
       <li>Envie o contrato assinado pelo link individual recebido no e-mail.</li>
     </ol>
     <p>O pagamento e o envio do contrato assinado devem ser concluídos até 6 horas antes do início da reserva. A confirmação é feita pela equipe do salão.</p>
+    <p>Dúvidas? <a href="mailto:salaoespacotx@gmail.com">salaoespacotx@gmail.com</a> · <a href="tel:+5518996555494">+55 (18) 9 9655-5494</a></p>
+    </details>
     <footer>
-      <p>Dúvidas? <a href="mailto:salaoespacotx@gmail.com">salaoespacotx@gmail.com</a><br><a href="tel:+5518996555494">+55 (18) 9 9655-5494</a></p>
-      <a href="./">Voltar ao site</a>
+      <a class="close-link" href="./">Fechar</a>
     </footer>
   </main>
   <script>
@@ -106,7 +110,7 @@
     qr.addEventListener('load', () => { qr.hidden = false; });
     qr.addEventListener('error', () => {
       qr.hidden = true;
-      copyStatus.textContent = 'Não foi possível carregar o QR Code. Use o botão Copiar Pix com o valor.';
+      copyStatus.textContent = 'Não foi possível carregar o QR Code. Use o botão COPIAR CÓDIGO.';
     });
     days.addEventListener('change', updatePayment);
     days.disabled = false;
