@@ -109,3 +109,12 @@ As pré-reservas continuam sem expiração automática. Erros `PT400`, `PT404`, 
 ## Verificação remota
 
 `npm run verify:supabase` consulta a disponibilidade, verifica o bloqueio de leitura pública e testa rejeição de dados inválidos. Não cria registros. `npm run verify:email` verifica os endpoints, CORS e a nova RPC sem enfileirar mensagens. A antiga opção `--write-reservation` foi removida, porque uma gravação real agora também agenda e-mails.
+
+### Cancelamento com preservação de histórico
+
+Após as migrações de Gmail e fila, aplique `migrations/202610210001_soft_cancel_reservation.sql`.
+A RPC `booking_cancel_reservation` mantém o registro em `preReservations` e altera seu `status`
+para `cancelled` (inativo), em vez de excluí-lo. O período fica livre porque a agenda e a restrição
+de sobreposição consideram apenas `pending_payment` e `confirmed`. Envios ainda não concluídos
+são cancelados; o histórico de e-mails já enviados é preservado. O protocolo e o token individual
+continuam obrigatórios. Esta migração não recupera registros excluídos anteriormente.

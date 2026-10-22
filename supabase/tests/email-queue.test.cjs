@@ -11,7 +11,7 @@ test('durable Gmail outbox', async (t) => {
     create schema auth; create table auth.users(id uuid primary key);
     create function auth.uid() returns uuid language sql as 'select null::uuid';
     grant usage on schema public to anon, authenticated, service_role;`);
-  for (const name of ['202610190001_booking.sql','202610200001_gmail.sql','202610200002_email_queue.sql'])
+  for (const name of ['202610190001_booking.sql','202610200001_gmail.sql','202610200002_email_queue.sql','202610210001_soft_cancel_reservation.sql'])
     await db.exec(readFileSync('supabase/migrations/' + name, 'utf8'));
   await db.exec(readFileSync('supabase/migrations/202610200002_email_queue.sql', 'utf8'));
   const call = async (name, args = []) => (await db.query(
@@ -105,11 +105,12 @@ test('durable Gmail outbox', async (t) => {
     await assert.rejects(call('booking_request_email', ['contact', contact.id, 'b'.repeat(64), '', null]), e => e.code === 'PT404');
     await assert.rejects(call('booking_claim_email', ['contact', contact.id, contact.deliveryToken, 'manager', '']), e => e.code === '42501');
   });
-  await t.test('deleting the source cancels pending jobs', async () => {
+  await t.test('inactivating the reservation preserves the source and cancels pending jobs', async () => {
     await asRole('anon');
     const doomed = await call('booking_create_reservation', [{ ...person, startDate: '2038-06-01', endDate: '2038-06-02' }]);
     await call('booking_cancel_reservation', [doomed.id, doomed.notificationToken]);
     await asRole();
+    assert.equal((await db.query('select status from public."preReservations" where id=$1', [doomed.id])).rows[0].status, 'cancelled');
     const states = (await db.query('select status from booking_private.email_deliveries where record_id=$1', [doomed.id])).rows;
     assert.deepEqual(states, [{ status: 'cancelled' }, { status: 'cancelled' }]);
     await asRole('service_role');
