@@ -21,7 +21,7 @@
             </div>
             <div class="col-12 col-md-6">
               <label for="pre-phone" class="form-label">Telefone <span aria-hidden="true">*</span></label>
-              <input id="pre-phone" type="tel" class="form-control" formControlName="phone" autocomplete="tel" inputmode="tel" required maxlength="30" placeholder="(11) 99999-9999" [class.is-invalid]="invalid('phone')" [attr.aria-invalid]="invalid('phone')" [attr.aria-describedby]="invalid('phone') ? 'pre-phone-error' : null">
+              <input id="pre-phone" type="tel" class="form-control" formControlName="phone" autocomplete="tel" inputmode="tel" required maxlength="15" placeholder="(99) 99999-9999" (input)="maskPhone($event)" [class.is-invalid]="invalid('phone')" [attr.aria-invalid]="invalid('phone')" [attr.aria-describedby]="invalid('phone') ? 'pre-phone-error' : null">
               @if (invalid('phone')) { <div id="pre-phone-error" class="invalid-feedback">Informe um telefone válido com DDD.</div> }
             </div>
             <div class="col-12 col-md-6">

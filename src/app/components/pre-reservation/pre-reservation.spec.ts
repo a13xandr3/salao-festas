@@ -300,4 +300,24 @@ describe('PreReservation', () => {
     expect(element.querySelector('.btn-outline-dark')).not.toBeNull();
   });
 
+  it.each([
+    ['', ''], ['1', '(1'], ['18', '(18)'], ['189', '(18) 9'],
+    ['1899655549', '(18) 9965-5549'], ['18996555494', '(18) 99655-5494'],
+    ['(18) 99655-5494', '(18) 99655-5494'], ['abc18996555494123', '(18) 99655-5494'],
+  ])('masks the phone input %s as %s', (value, expected) => {
+    const { element, fixture } = setup();
+    const input = element.querySelector<HTMLInputElement>('#pre-phone')!;
+    input.value = value; input.dispatchEvent(new Event('input')); fixture.detectChanges();
+    expect(input.value).toBe(expected);
+    expect(fixture.componentInstance['form'].controls.phone.value).toBe(expected);
+    expect(input.placeholder).toBe('(99) 99999-9999');
+  });
+  it('keeps the caret near the edited digit instead of moving it to the end', () => {
+    const { element } = setup();
+    const input = element.querySelector<HTMLInputElement>('#pre-phone')!;
+    input.value = '(18) 98655-5494'; input.setSelectionRange(7, 7);
+    input.dispatchEvent(new Event('input'));
+    expect(input.selectionStart).toBe(7);
+  });
+
 });
