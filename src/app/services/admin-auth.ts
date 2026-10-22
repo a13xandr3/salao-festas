@@ -3,7 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
 import { SiteConfig } from './site-config';
 
-export type AdminList = 'contacts' | 'preReservations';
+export type AdminList = 'contacts' | 'preReservations' | 'pre_reservas_canceladas';
 export interface AdminListRow {
   id: string; name: string; email: string; phone: string; createdAt: string;
   message?: string; startDate?: string; endDate?: string; status?: string;

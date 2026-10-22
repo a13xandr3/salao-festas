@@ -12,6 +12,16 @@ import { AdminAuth, AdminList, AdminListRow } from '../../services/admin-auth';
 export class Painel {
   protected readonly auth = inject(AdminAuth);
   protected readonly year = new Date().getFullYear();
+  protected readonly listTitles: Record<AdminList, string> = {
+    contacts: 'Lista de contatos',
+    preReservations: 'Lista de pré-reservas',
+    pre_reservas_canceladas: 'Cancelados',
+  };
+  protected readonly listIds: Record<AdminList, string> = {
+    contacts: 'lista-contatos',
+    preReservations: 'lista-pre-reservas',
+    pre_reservas_canceladas: 'lista-cancelados',
+  };
   protected readonly statusLabels: Record<string, string> = { pending_payment: 'Aguardando pagamento', confirmed: 'Reservado', cancelled: 'Cancelado' };
   readonly busy = input(false);
   readonly signOut = output<void>();

@@ -7,6 +7,7 @@
       <nav class="panel-nav" aria-label="Navegação do painel">
         <a href="#lista-contatos" [class.active]="selectedList() === 'contacts'" [attr.aria-current]="selectedList() === 'contacts' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('contacts')">Contatos</a>
         <a href="#lista-pre-reservas" [class.active]="selectedList() === 'preReservations'" [attr.aria-current]="selectedList() === 'preReservations' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('preReservations')">Pré-reservas</a>
+        <a href="#lista-cancelados" [class.active]="selectedList() === 'pre_reservas_canceladas'" [attr.aria-current]="selectedList() === 'pre_reservas_canceladas' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('pre_reservas_canceladas')">Cancelados</a>
       </nav>
       <button type="button" class="panel-logout btn btn-outline-dark ms-auto" [disabled]="busy()" (click)="signOut.emit()">Logout</button>
     </header>
@@ -15,8 +16,8 @@
       <span class="visually-hidden">Usuário: {{ auth.email() }}</span>
       <div class="panel-results">
         @if (selectedList(); as list) {
-          <section [id]="list === 'contacts' ? 'lista-contatos' : 'lista-pre-reservas'" [attr.aria-busy]="loading()" aria-labelledby="list-title">
-            <h2 id="list-title" class="h4">{{ list === 'contacts' ? 'Lista de contatos' : 'Lista de pré-reservas' }}</h2>
+          <section [id]="listIds[list]" [attr.aria-busy]="loading()" aria-labelledby="list-title">
+            <h2 id="list-title" class="h4">{{ listTitles[list] }}</h2>
             @if (loading()) { <p role="status">Carregando…</p> }
             @else if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
             @else if (!rows().length) { <p role="status">Nenhum registro encontrado.</p> }

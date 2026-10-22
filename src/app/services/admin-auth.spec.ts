@@ -130,7 +130,7 @@ describe('AdminAuth', () => {
     await expect(service.list('contacts')).rejects.toThrow('Acesso restrito');
     expect(createClient).not.toHaveBeenCalled();
   });
-  it.each(['contacts', 'preReservations'] as const)('reads only selected public fields from the protected %s table', async type => {
+  it.each(['contacts', 'preReservations', 'pre_reservas_canceladas'] as const)('reads only selected public fields from the protected %s table', async type => {
     await signIn(); await service.verify('123456');
     const records = [{ id: 'record', name: 'Cliente' }];
     const query = { select: jest.fn().mockReturnThis(), order: jest.fn().mockReturnThis(), limit: jest.fn().mockReturnThis(), overrideTypes: jest.fn().mockResolvedValue(ok(records)) };

@@ -32,7 +32,7 @@ describe('Painel', () => {
   it('navigates to contacts and pre-reservations without reloading the authenticated page', async () => {
     const { fixture, auth, element } = setup();
     const links = element.querySelectorAll<HTMLAnchorElement>('nav a');
-    expect(Array.from(links, link => link.textContent)).toEqual(['Contatos', 'Pré-reservas']);
+    expect(Array.from(links, link => link.textContent)).toEqual(['Contatos', 'Pré-reservas', 'Cancelados']);
     expect(auth.list).not.toHaveBeenCalled();
     expect(element.querySelector('.panel-empty')!.textContent).toContain('Aqui será exibido o resultado');
     expect(element.querySelector('.panel-footer')!.textContent).toContain('Desenvolvido por Alexandre Esteves Alves');
@@ -52,6 +52,22 @@ describe('Painel', () => {
     expect(element.querySelector('#lista-pre-reservas')).not.toBeNull(); expect(element.querySelector('#lista-contatos')).toBeNull();
     expect(element.querySelector('tbody')!.textContent).toContain('25/10/2026 a 26/10/2026');
     expect(element.querySelector('tbody')!.textContent).toContain('Aguardando pagamento');
+  });
+  it('loads cancelled reservations from the Supabase view in the central area', async () => {
+    const { fixture, auth, element } = setup();
+    auth.list.mockResolvedValueOnce([{
+      id: 'cancelled', name: 'Cliente cancelado', email: 'cancelled@example.com', phone: '11999999999',
+      startDate: '2026-10-25', endDate: '2026-10-26', status: 'cancelled', createdAt: '2026-10-22T15:00:00Z',
+    }]);
+    const link = element.querySelector<HTMLAnchorElement>('a[href="#lista-cancelados"]')!;
+    link.click(); await fixture.whenStable(); fixture.detectChanges();
+    expect(auth.list).toHaveBeenCalledWith('pre_reservas_canceladas');
+    expect(link.getAttribute('aria-current')).toBe('page');
+    expect(element.querySelector('.panel-results #lista-cancelados h2')!.textContent).toBe('Cancelados');
+    expect(element.querySelector('tbody')!.textContent).toContain('Cliente cancelado');
+    expect(element.querySelector('tbody')!.textContent).toContain('Cancelado');
+    expect(element.querySelector('tbody')!.textContent).toContain('25/10/2026 a 26/10/2026');
+    expect(element.querySelector('.panel-empty')).toBeNull();
   });
   it('shows loading and empty states, blocks overlapping requests and honors logout activity', async () => {
     const { fixture, auth, component, element } = setup();
