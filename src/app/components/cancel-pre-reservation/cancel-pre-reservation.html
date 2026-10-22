@@ -3,7 +3,7 @@
     <div class="row g-3 g-lg-4 align-items-start">
       <div class="col-12 col-lg-4">
         <h3 id="cancellation-title">Precisa cancelar?</h3>
-        <p class="mb-0">Confirme o cancelamento da pré-reserva vinculada ao seu link individual. Ao confirmar, sua pré-reserva será removida e o período voltará a ficar livre.</p>
+        <p class="mb-0">Confirme o cancelamento da pré-reserva vinculada ao seu link individual. Ao confirmar, sua pré-reserva será cancelada e o período voltará a ficar livre.</p>
       </div>
       <div class="col-12 col-lg-8">
         @if (!success()) {
@@ -13,7 +13,7 @@
               <p class="mb-3 text-break">Protocolo: <span class="d-block d-sm-inline">{{ form.controls.id.value }}</span></p>
               <div class="form-check mb-3">
                 <input id="cancel-confirm" class="form-check-input" type="checkbox" formControlName="confirm" required [attr.aria-invalid]="form.controls.confirm.invalid && form.controls.confirm.touched">
-                <label class="form-check-label text-break" for="cancel-confirm">Quero remover minha pré-reserva e liberar o período.</label>
+                <label class="form-check-label text-break" for="cancel-confirm">Quero cancelar minha pré-reserva e liberar o período.</label>
               </div>
               @if (form.invalid && form.touched) {
                 <p class="text-danger small mb-3">Marque a confirmação para cancelar sua pré-reserva.</p>

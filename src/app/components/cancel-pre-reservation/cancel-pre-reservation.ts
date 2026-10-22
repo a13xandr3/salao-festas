@@ -73,7 +73,7 @@ export class CancelPreReservation {
         error: (error) =>
           this.feedback.set(
             error.status === 404
-              ? 'Confira o protocolo e o código de cancelamento. A pré-reserva pode já ter sido removida.'
+              ? 'Confira o protocolo e o código de cancelamento. A pré-reserva pode já ter sido cancelada.'
               : 'Não foi possível cancelar. Seus dados foram preservados; tente novamente.',
           ),
       });

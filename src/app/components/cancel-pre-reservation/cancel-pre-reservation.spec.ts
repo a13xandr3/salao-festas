@@ -28,6 +28,8 @@ describe('CancelPreReservation', () => {
       .querySelector('form')!
       .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     fixture.detectChanges();
+    expect(element.textContent).toContain('Quero cancelar minha pré-reserva');
+    expect(element.textContent).not.toContain('removida');
     const http = TestBed.inject(HttpTestingController);
     http.expectNone(rpcUrl('booking_cancel_reservation'));
     element.querySelector<HTMLInputElement>('#cancel-confirm')!.click();
@@ -56,6 +58,7 @@ describe('CancelPreReservation', () => {
     fixture.detectChanges();
     expect(element.textContent).toContain(status === 404 ? 'Confira o protocolo' : 'Seus dados foram preservados');
     expect(element.querySelector<HTMLInputElement>('#cancel-confirm')!.checked).toBe(true);
+    if (status === 404) expect(element.textContent).toContain('A pré-reserva pode já ter sido cancelada.');
     expect(cancelled).not.toHaveBeenCalled();
     submit(); http.expectOne(rpcUrl('booking_cancel_reservation')).flush({ cancelled: true });
     fixture.detectChanges(); expect(cancelled).toHaveBeenCalledTimes(1);
