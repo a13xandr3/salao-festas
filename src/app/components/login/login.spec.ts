@@ -59,6 +59,10 @@ describe('Login', () => {
     expect(auth.verify).toHaveBeenCalledTimes(1); finish(); await pending;
     expect(auth.verify).toHaveBeenCalledWith('123456'); expect(component['secondFactor'].controls.code.value).toBe('');
     authorized.set(true); stage.set('authenticated'); fixture.detectChanges();
+    expect(element.querySelector('.restricted-area.has-panel')).not.toBeNull();
+    expect(element.querySelector('.restricted-area > header')).toBeNull();
+    expect(element.querySelector('.restricted-area > footer')).toBeNull();
+    expect(element.querySelector('app-painel .panel-header')).not.toBeNull();
     expect(element.querySelector('app-painel h1')!.textContent).toBe('Painel'); expect(element.querySelector('form')).toBeNull();
     element.querySelector<HTMLButtonElement>('app-painel button')!.click(); await fixture.whenStable();
     expect(auth.signOut).toHaveBeenCalled();

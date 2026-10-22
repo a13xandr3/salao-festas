@@ -6,10 +6,12 @@ import { AdminAuth, AdminList, AdminListRow } from '../../services/admin-auth';
   selector: 'app-painel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './painel.html',
+  styleUrl: './painel.scss',
   imports: [DatePipe],
 })
 export class Painel {
   protected readonly auth = inject(AdminAuth);
+  protected readonly year = new Date().getFullYear();
   protected readonly statusLabels: Record<string, string> = { pending_payment: 'Aguardando pagamento', confirmed: 'Reservado', cancelled: 'Cancelado' };
   readonly busy = input(false);
   readonly signOut = output<void>();

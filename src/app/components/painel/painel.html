@@ -1,44 +1,64 @@
 @if (auth.authorized()) {
-  <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
-    <h1 class="h3 m-0">Painel</h1>
-    <button type="button" class="btn btn-outline-dark ms-auto flex-shrink-0" [disabled]="busy()" (click)="signOut.emit()">Logout</button>
+  <div class="panel-shell">
+    <header class="panel-header">
+      <a href="./" class="panel-brand" aria-label="Espaço TX — voltar ao site">
+        <img src="images/familia-tx-96.png" alt="Família TX" width="96" height="96">
+      </a>
+      <nav class="panel-nav" aria-label="Navegação do painel">
+        <a href="#lista-contatos" [class.active]="selectedList() === 'contacts'" [attr.aria-current]="selectedList() === 'contacts' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('contacts')">Contatos</a>
+        <a href="#lista-pre-reservas" [class.active]="selectedList() === 'preReservations'" [attr.aria-current]="selectedList() === 'preReservations' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('preReservations')">Pré-reservas</a>
+      </nav>
+      <button type="button" class="panel-logout btn btn-outline-dark ms-auto" [disabled]="busy()" (click)="signOut.emit()">Logout</button>
+    </header>
+    <main class="panel-main" aria-labelledby="painel-title">
+      <h1 id="painel-title" class="visually-hidden">Painel</h1>
+      <span class="visually-hidden">Usuário: {{ auth.email() }}</span>
+      <div class="panel-results">
+        @if (selectedList(); as list) {
+          <section [id]="list === 'contacts' ? 'lista-contatos' : 'lista-pre-reservas'" [attr.aria-busy]="loading()" aria-labelledby="list-title">
+            <h2 id="list-title" class="h4">{{ list === 'contacts' ? 'Lista de contatos' : 'Lista de pré-reservas' }}</h2>
+            @if (loading()) { <p role="status">Carregando…</p> }
+            @else if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
+            @else if (!rows().length) { <p role="status">Nenhum registro encontrado.</p> }
+            @else {
+              <div class="table-responsive" tabindex="0" role="region" aria-labelledby="list-title">
+                <table class="table align-middle">
+                  <caption>Até 100 registros mais recentes. Somente leitura.</caption>
+                  <thead><tr><th scope="col">Nome</th><th scope="col">Contato</th>
+                    @if (list === 'contacts') { <th scope="col">Mensagem</th> }
+                    @else { <th scope="col">Período</th><th scope="col">Status</th> }
+                    <th scope="col">Criado em</th>
+                  </tr></thead>
+                  <tbody>
+                    @for (row of rows(); track row.id) {
+                      <tr>
+                        <td class="text-break">{{ row.name }}</td>
+                        <td class="text-break">{{ row.email }}<br>{{ row.phone }}</td>
+                        @if (list === 'contacts') { <td class="text-break">{{ row.message }}</td> }
+                        @else { <td>{{ row.startDate | date:'dd/MM/yyyy':'UTC' }} a {{ row.endDate | date:'dd/MM/yyyy':'UTC' }}</td><td class="text-break">{{ statusLabels[row.status || ''] || 'Não informado' }}</td> }
+                        <td>{{ row.createdAt | date:'dd/MM/yyyy HH:mm':'-0300' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        } @else {
+          <div class="panel-empty">
+            <svg viewBox="0 0 120 100" width="120" height="100" aria-hidden="true" focusable="false">
+              <rect x="8" y="8" width="104" height="84" rx="5" fill="none" stroke="currentColor" stroke-width="5"/>
+              <path d="M8 28h104" stroke="currentColor" stroke-width="5"/>
+              <circle cx="20" cy="18" r="3" fill="currentColor"/><circle cx="31" cy="18" r="3" fill="currentColor"/><circle cx="42" cy="18" r="3" fill="currentColor"/>
+              <path d="M28 46h64M28 62h64M28 78h42" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+            <p>Aqui será exibido o resultado<br class="d-none d-sm-inline"> do clique nos links.</p>
+          </div>
+        }
+      </div>
+    </main>
+    <footer class="panel-footer">Desenvolvido por Alexandre Esteves Alves, todos os direitos reservados © {{ year }}</footer>
   </div>
-  <p class="text-break">{{ auth.email() }}</p>
-  <nav class="nav nav-pills flex-column flex-sm-row gap-2 my-4" aria-label="Navegação do painel">
-    <a href="#lista-contatos" class="nav-link" [class.active]="selectedList() === 'contacts'" [attr.aria-current]="selectedList() === 'contacts' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('contacts')">Lista de contatos</a>
-    <a href="#lista-pre-reservas" class="nav-link" [class.active]="selectedList() === 'preReservations'" [attr.aria-current]="selectedList() === 'preReservations' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('preReservations')">Lista de pré-reservas</a>
-  </nav>
-  @if (selectedList(); as list) {
-    <section [id]="list === 'contacts' ? 'lista-contatos' : 'lista-pre-reservas'" [attr.aria-busy]="loading()" aria-labelledby="list-title">
-      <h2 id="list-title" class="h4">{{ list === 'contacts' ? 'Lista de contatos' : 'Lista de pré-reservas' }}</h2>
-      @if (loading()) { <p role="status">Carregando…</p> }
-      @else if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
-      @else if (!rows().length) { <p role="status">Nenhum registro encontrado.</p> }
-      @else {
-        <div class="table-responsive" tabindex="0" role="region" aria-labelledby="list-title">
-          <table class="table align-middle">
-            <caption>Até 100 registros mais recentes. Somente leitura.</caption>
-            <thead><tr><th scope="col">Nome</th><th scope="col">Contato</th>
-              @if (list === 'contacts') { <th scope="col">Mensagem</th> }
-              @else { <th scope="col">Período</th><th scope="col">Status</th> }
-              <th scope="col">Criado em</th>
-            </tr></thead>
-            <tbody>
-              @for (row of rows(); track row.id) {
-                <tr>
-                  <td class="text-break">{{ row.name }}</td>
-                  <td class="text-break">{{ row.email }}<br>{{ row.phone }}</td>
-                  @if (list === 'contacts') { <td class="text-break">{{ row.message }}</td> }
-                  @else { <td>{{ row.startDate | date:'dd/MM/yyyy':'UTC' }} a {{ row.endDate | date:'dd/MM/yyyy':'UTC' }}</td><td class="text-break">{{ statusLabels[row.status || ''] || 'Não informado' }}</td> }
-                  <td>{{ row.createdAt | date:'dd/MM/yyyy HH:mm':'-0300' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </section>
-  }
 } @else {
   <p role="alert">Faça o login com autenticação em dois fatores para acessar o painel.</p>
 }

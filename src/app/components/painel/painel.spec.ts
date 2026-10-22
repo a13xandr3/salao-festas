@@ -12,7 +12,8 @@ describe('Painel', () => {
     expect(element.querySelector('h1')).toBeNull(); expect(element.querySelector('[role=alert]')).not.toBeNull();
     authorized.set(true); fixture.detectChanges();
     expect(element.querySelector('h1')!.textContent).toBe('Painel');
-    expect(element.querySelector('img')).toBeNull(); expect(element.textContent).toContain('<img src=x onerror=alert(1)>');
+    expect(element.querySelectorAll('img')).toHaveLength(1);
+    expect(element.querySelector('img')!.getAttribute('src')).toBe('images/familia-tx-96.png'); expect(element.textContent).toContain('<img src=x onerror=alert(1)>');
     const emit = jest.fn(); fixture.componentInstance.signOut.subscribe(emit);
     const button = element.querySelector<HTMLButtonElement>('button')!;
     expect(button.textContent).toBe('Logout');
@@ -31,14 +32,19 @@ describe('Painel', () => {
   it('navigates to contacts and pre-reservations without reloading the authenticated page', async () => {
     const { fixture, auth, element } = setup();
     const links = element.querySelectorAll<HTMLAnchorElement>('nav a');
-    expect(Array.from(links, link => link.textContent)).toEqual(['Lista de contatos', 'Lista de pré-reservas']);
+    expect(Array.from(links, link => link.textContent)).toEqual(['Contatos', 'Pré-reservas']);
     expect(auth.list).not.toHaveBeenCalled();
+    expect(element.querySelector('.panel-empty')!.textContent).toContain('Aqui será exibido o resultado');
+    expect(element.querySelector('.panel-footer')!.textContent).toContain('Desenvolvido por Alexandre Esteves Alves');
+    expect(element.querySelector('.panel-footer')!.textContent).toContain(String(new Date().getFullYear()));
     auth.list.mockResolvedValueOnce([{ id: 'contact', name: 'Cliente', email: 'client@example.com', phone: '11999999999', message: '<img src=x onerror=alert(1)>', createdAt: '2026-10-22T15:00:00Z' }]);
     const click = new MouseEvent('click', { bubbles: true, cancelable: true }); links[0].dispatchEvent(click);
     expect(click.defaultPrevented).toBe(true);
     await fixture.whenStable(); fixture.detectChanges();
-    expect(element.querySelector('#lista-contatos')).not.toBeNull(); expect(links[0].getAttribute('aria-current')).toBe('page');
-    expect(element.querySelector('tbody')!.textContent).toContain('<img src=x onerror=alert(1)>'); expect(element.querySelector('img')).toBeNull();
+    expect(element.querySelector('.panel-empty')).toBeNull();
+    expect(element.querySelector('.panel-results #lista-contatos')).not.toBeNull(); expect(links[0].getAttribute('aria-current')).toBe('page');
+    expect(element.querySelector('tbody')!.textContent).toContain('<img src=x onerror=alert(1)>'); expect(element.querySelectorAll('img')).toHaveLength(1);
+    expect(element.querySelector('img')!.getAttribute('src')).toBe('images/familia-tx-96.png');
     expect(element.querySelector('tbody')!.textContent).toContain('22/10/2026 12:00');
     auth.list.mockResolvedValueOnce([{ id: 'reservation', name: 'Cliente', email: 'client@example.com', phone: '11999999999', startDate: '2026-10-25', endDate: '2026-10-26', status: 'pending_payment', createdAt: '2026-10-22T15:00:00Z' }]);
     links[1].click(); await fixture.whenStable(); fixture.detectChanges();

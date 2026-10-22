@@ -1,8 +1,10 @@
-<section class="restricted-area" [class.has-panel]="auth.authorized()" aria-labelledby="restricted-title" [attr.aria-busy]="busy()">
+<section class="restricted-area" [class.has-panel]="auth.authorized()" [attr.aria-labelledby]="auth.authorized() ? 'painel-title' : 'restricted-title'" [attr.aria-busy]="busy()">
+  @if (!auth.authorized()) {
   <header class="mb-4">
     <a href="./" class="brand">ESPAÇO TX · FAMÍLIA TEIXEIRA</a>
     <p id="restricted-title" class="mt-3 mb-0">Área restrita</p>
   </header>
+  }
   @if (auth.authorized()) {
     <app-painel [busy]="busy()" (signOut)="signOut()"></app-painel>
   } @else if (auth.stage() === 'credentials') {
@@ -40,5 +42,7 @@
     <button class="btn btn-link w-100 mt-2" type="button" [disabled]="busy()" (click)="signOut()">Cancelar e sair</button>
   }
   @if (error()) { <p class="alert alert-danger mt-3 mb-0" role="alert">{{ error() }}</p> }
-  <footer class="mt-4"><a href="./">Voltar ao site</a></footer>
+  @if (!auth.authorized()) {
+    <footer class="mt-4"><a href="./">Voltar ao site</a></footer>
+  }
 </section>
