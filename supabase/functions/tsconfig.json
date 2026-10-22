@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "types": ["deno", "node"],
+    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "paths": {
+      "npm:nodemailer@10.1.7": ["../../node_modules/@types/nodemailer/index.d.ts"]
+    }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["**/*.spec.ts"]
+}
