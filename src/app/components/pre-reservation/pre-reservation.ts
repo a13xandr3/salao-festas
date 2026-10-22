@@ -23,7 +23,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize, timeout } from 'rxjs';
+import { finalize, Subscription, timeout } from 'rxjs';
 import { DateTime } from 'luxon';
 
 export function reservationPeriod(control: AbstractControl): ValidationErrors | null {
@@ -68,6 +68,7 @@ export class PreReservation {
   private readonly api = inject(SupabaseApi);
   private readonly destroyRef = inject(DestroyRef);
   private readonly builder = inject(FormBuilder);
+  private notification?: Subscription;
   protected readonly ready = signal(false);
   protected readonly formVisible = signal(true);
   protected readonly sending = signal(false);
@@ -138,6 +139,18 @@ export class PreReservation {
     this.formVisible.set(true);
   }
 
+  clearCancelledReceipt(id: string): void {
+    if (this.receipt()?.id !== id) return;
+    this.notification?.unsubscribe();
+    this.session.clear(id);
+    this.receipt.set(null);
+    this.error.set('');
+    this.sending.set(false);
+    this.formVisible.set(false);
+    this.attempted.set(false);
+    this.form.reset();
+  }
+
   protected closeSuccess(): void {
     const dialog = this.successDialog().nativeElement;
     if (!dialog.open) return;
@@ -152,17 +165,20 @@ export class PreReservation {
     if (this.sending()) return;
     this.sending.set(true);
     this.error.set('');
-    this.delivery
+    this.notification = this.delivery
       .send({ kind: 'reservation', id: receipt.id, token: receipt.cancellationToken })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.sending.set(false)),
       )
       .subscribe({
-        error: () =>
-          this.error.set(
-            'Pré-reserva registrada. O envio está na fila e será retomado automaticamente.',
-          ),
+        error: (error: { status?: number }) => {
+          if (error.status === 404 || error.status === 409) {
+            this.clearCancelledReceipt(receipt.id);
+            return;
+          }
+          this.error.set('Não foi possível confirmar o envio do e-mail. Tente novamente.');
+        },
       });
   }
 

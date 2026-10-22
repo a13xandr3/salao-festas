@@ -237,4 +237,67 @@ describe('PreReservation', () => {
     expect(element.querySelector('form')).not.toBeNull();
   });
 
+  function saveReceipt() {
+    sessionStorage.setItem('familia-tx-pre-reservation', JSON.stringify({
+      ...testReservation,
+      cancellationToken: testReservation.notificationToken,
+      links: { contract: 'https://example.com/contract.pdf', pix: 'https://example.com/pix' },
+    }));
+  }
+  it.each([404, 409])('discards stale receipt after HTTP %s and does not retry it on refresh', (status) => {
+    saveReceipt();
+    const delivery = TestBed.inject(EmailService).send as jest.Mock;
+    delivery.mockReturnValueOnce(throwError(() => ({ status })));
+    const { fixture, element } = setup();
+    expect(sessionStorage.getItem('familia-tx-pre-reservation')).toBeNull();
+    expect(element.querySelector('.alert-danger')).toBeNull();
+    expect(element.querySelector('.btn-outline-dark')).toBeNull();
+    fixture.componentInstance.openForDate('2028-02-28'); fixture.detectChanges();
+    expect(element.querySelector('form')).not.toBeNull();
+    fixture.destroy(); delivery.mockClear();
+    const refreshed = setup();
+    expect(delivery).not.toHaveBeenCalled();
+    expect(refreshed.element.querySelector('.alert-danger')).toBeNull();
+  });
+  it('hides the notice and retry button while retrying and keeps them hidden after acknowledgement', () => {
+    saveReceipt();
+    const delivery = TestBed.inject(EmailService).send as jest.Mock;
+    const pending = new Subject<{ sent: boolean; queued: boolean }>();
+    delivery.mockReturnValueOnce(throwError(() => ({ status: 503 }))).mockReturnValueOnce(pending);
+    const { fixture, element, http } = setup();
+    expect(element.textContent).toContain('Não foi possível confirmar o envio');
+    expect(element.textContent).not.toContain('está na fila');
+    element.querySelector<HTMLButtonElement>('.btn-outline-dark')!.click(); fixture.detectChanges();
+    expect(element.querySelector('.alert-danger')).toBeNull();
+    expect(element.querySelector('.btn-outline-dark')).toBeNull();
+    pending.next({ sent: false, queued: true }); pending.complete(); fixture.detectChanges();
+    expect(element.querySelector('.alert-danger')).toBeNull();
+    http.expectNone(rpcUrl('booking_create_reservation'));
+  });
+  it('clears memory and session and cancels an in-flight notification only for the cancelled reservation', () => {
+    saveReceipt();
+    const pending = new Subject<{ sent: boolean }>();
+    (TestBed.inject(EmailService).send as jest.Mock).mockReturnValue(pending);
+    const { fixture, element } = setup();
+    fixture.componentInstance.clearCancelledReceipt('another-id');
+    expect(pending.observed).toBe(true);
+    expect(sessionStorage.getItem('familia-tx-pre-reservation')).not.toBeNull();
+    fixture.componentInstance.clearCancelledReceipt(testReservation.id); fixture.detectChanges();
+    expect(pending.observed).toBe(false);
+    pending.error({ status: 503 }); fixture.detectChanges();
+    expect(element.querySelector('.alert-danger')).toBeNull();
+    expect(element.querySelector('form')).toBeNull();
+    expect(sessionStorage.getItem('familia-tx-pre-reservation')).toBeNull();
+    fixture.componentInstance.openForDate('2028-02-28'); fixture.detectChanges();
+    expect(element.querySelector('form')).not.toBeNull();
+  });
+  it('allows a retry after another recoverable failure without claiming the email was queued', () => {
+    saveReceipt();
+    (TestBed.inject(EmailService).send as jest.Mock).mockReturnValue(throwError(() => ({ status: 503 })));
+    const { fixture, element } = setup();
+    element.querySelector<HTMLButtonElement>('.btn-outline-dark')!.click(); fixture.detectChanges();
+    expect(element.querySelector('.alert-danger')!.textContent).toContain('Tente novamente');
+    expect(element.querySelector('.btn-outline-dark')).not.toBeNull();
+  });
+
 });
