@@ -22,7 +22,7 @@ import { finalize, timeout } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CancelPreReservation {
-  readonly cancelled = output<void>();
+  readonly cancelled = output<string>();
   private readonly api = inject(SupabaseApi);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
@@ -68,7 +68,7 @@ export class CancelPreReservation {
           this.feedback.set('Sua pré-reserva foi cancelada e o período foi liberado.');
           this.form.reset();
           this.session.clear(id);
-          this.cancelled.emit();
+          this.cancelled.emit(id);
         },
         error: (error) =>
           this.feedback.set(

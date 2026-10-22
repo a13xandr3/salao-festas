@@ -62,6 +62,7 @@ describe('CancelPreReservation', () => {
     expect(cancelled).not.toHaveBeenCalled();
     submit(); http.expectOne(rpcUrl('booking_cancel_reservation')).flush({ cancelled: true });
     fixture.detectChanges(); expect(cancelled).toHaveBeenCalledTimes(1);
+    expect(cancelled).toHaveBeenCalledWith('my-id');
   });
 
 });

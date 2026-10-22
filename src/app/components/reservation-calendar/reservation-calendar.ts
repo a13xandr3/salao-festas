@@ -72,6 +72,11 @@ export class ReservationCalendar {
         .subscribe(() => this.load());
     });
   }
+  protected onCancelled(id: string): void {
+    this.preReservation()?.clearCancelledReceipt(id);
+    this.load();
+  }
+
   protected openReservation(): void {
     if (!this.selectedFree()) return;
     this.linkAction.set(false);

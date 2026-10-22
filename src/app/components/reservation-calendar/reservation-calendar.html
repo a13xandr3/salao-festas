@@ -51,6 +51,6 @@
   </div>
   <p class="agenda-note text-break">A agenda consulta as pré-reservas a cada 30 segundos. Pagamento e contrato são acompanhados pela equipe do salão.</p>
   <div [hidden]="linkAction()"><app-pre-reservation [selectedDate]="selected()" (created)="load()"></app-pre-reservation></div>
-  <app-cancel-pre-reservation (cancelled)="load()"></app-cancel-pre-reservation>
+  <app-cancel-pre-reservation (cancelled)="onCancelled($event)"></app-cancel-pre-reservation>
   <app-contract-upload></app-contract-upload>
 </section>

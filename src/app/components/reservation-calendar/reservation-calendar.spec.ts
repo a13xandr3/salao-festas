@@ -1,4 +1,6 @@
-import { provideTestConfig, rpcUrl } from '../../testing/supabase';
+import { EmailService } from '../../shared/email/email.service';
+import { throwError } from 'rxjs';
+import { provideTestConfig, rpcUrl, testReservation } from '../../testing/supabase';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -17,6 +19,7 @@ describe('ReservationCalendar', () => {
     TestBed.inject(HttpTestingController).verify();
     jest.useRealTimers();
     history.replaceState(null, '', '/');
+    sessionStorage.clear();
   });
   function setup() {
     const fixture = TestBed.createComponent(ReservationCalendar);
@@ -144,6 +147,31 @@ describe('ReservationCalendar', () => {
     history.replaceState(null, '', '/#enviar-contrato');
     const { respond, element } = setup(); respond();
     expect(element.querySelector('app-pre-reservation')!.parentElement!.hidden).toBe(true);
+  });
+
+  it('synchronizes the pre-reservation after cancellation and permits the released date again', () => {
+    TestBed.overrideProvider(EmailService, { useValue: { send: jest.fn(() => throwError(() => ({ status: 503 }))) } });
+    sessionStorage.setItem('familia-tx-pre-reservation', JSON.stringify({
+      ...testReservation, cancellationToken: testReservation.notificationToken,
+      links: { contract: 'https://example.com/contract.pdf', pix: 'https://example.com/pix' },
+    }));
+    history.replaceState(null, '', '/#cancelar-pre-reserva?id=' + testReservation.id + '&token=' + testReservation.notificationToken);
+    const { fixture, element, respond, http } = setup(); respond();
+    const preReservation = element.querySelector('app-pre-reservation')!;
+    expect(preReservation.querySelector('.alert-danger')).not.toBeNull();
+    const cancellation = element.querySelector('app-cancel-pre-reservation')!;
+    cancellation.querySelector<HTMLInputElement>('#cancel-confirm')!.click();
+    cancellation.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    http.expectOne(rpcUrl('booking_cancel_reservation')).flush({ cancelled: true });
+    respond();
+    expect(preReservation.querySelector('.alert-danger')).toBeNull();
+    expect(preReservation.querySelector('.btn-outline-dark')).toBeNull();
+    expect(sessionStorage.getItem('familia-tx-pre-reservation')).toBeNull();
+    element.querySelector<HTMLButtonElement>('.calendar-day[aria-label*="28 de fevereiro"]')!.click(); fixture.detectChanges();
+    const link = element.querySelector<HTMLAnchorElement>('.contact-link')!;
+    link.addEventListener('click', event => event.preventDefault()); link.click(); fixture.detectChanges();
+    expect(preReservation.parentElement!.hidden).toBe(false);
+    expect(preReservation.querySelector<HTMLInputElement>('#pre-start-date')!.value).toBe('2028-02-28');
   });
 
 });
