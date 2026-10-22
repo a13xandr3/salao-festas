@@ -82,3 +82,39 @@ textarea {
     width: 100%;
   }
 }
+
+.contact-snackbar {
+  position: fixed;
+  z-index: 1080;
+  left: 50%;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: min(36rem, calc(100% - 2rem));
+  max-height: calc(100svh - 2rem);
+  overflow-y: auto;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #303b2c;
+  color: #fff;
+  box-shadow: 0 0.5rem 1.5rem #0003;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.snackbar-close {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  cursor: pointer;
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+}

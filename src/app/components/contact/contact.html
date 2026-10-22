@@ -43,7 +43,14 @@
         </fieldset>
         <div aria-live="polite" aria-atomic="true">
           @if (feedback()) {
-            <p class="alert text-break mt-3 mt-md-4 mb-0" [class.alert-success]="result() === 'success'" [class.alert-warning]="result() === 'warning'" [class.alert-danger]="result() === 'error'">{{ feedback() }}</p>
+            @if (result() === 'success') {
+              <div class="contact-snackbar" role="status">
+                <span>{{ feedback() }}</span>
+                <button type="button" class="snackbar-close" aria-label="Fechar aviso" (click)="dismissSuccess()">×</button>
+              </div>
+            } @else {
+              <p class="alert text-break mt-3 mt-md-4 mb-0" [class.alert-warning]="result() === 'warning'" [class.alert-danger]="result() === 'error'">{{ feedback() }}</p>
+            }
           }
         </div>
       </form>

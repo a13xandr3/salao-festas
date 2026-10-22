@@ -1,5 +1,5 @@
 import { EmailService } from '../../shared/email/email.service';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SupabaseApi } from '../../services/supabase-api';
@@ -15,6 +15,8 @@ export class Contact {
   private readonly delivery = inject(EmailService);
   private readonly api = inject(SupabaseApi);
   private readonly builder = inject(FormBuilder);
+  private snackbarTimer?: ReturnType<typeof setTimeout>;
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly sending = signal(false);
   protected readonly feedback = signal('');
   protected readonly result = signal<'success' | 'warning' | 'error' | ''>('');
@@ -39,6 +41,16 @@ export class Contact {
     email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
     message: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(2000)]],
   });
+
+  constructor() {
+    this.destroyRef.onDestroy(() => clearTimeout(this.snackbarTimer));
+  }
+
+  protected dismissSuccess(): void {
+    clearTimeout(this.snackbarTimer);
+    this.feedback.set('');
+    this.result.set('');
+  }
 
   protected maskPhone(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -65,8 +77,7 @@ export class Contact {
   protected async submit(): Promise<void> {
     if (this.sending()) return;
     this.form.markAllAsTouched();
-    this.feedback.set('');
-    this.result.set('');
+    this.dismissSuccess();
     if (this.form.invalid) return;
     this.sending.set(true);
     const payload = this.form.getRawValue();
@@ -86,6 +97,7 @@ export class Contact {
           : 'Sua mensagem foi registrada e será enviada por e-mail. Obrigado pelo contato!',
       );
       this.form.reset();
+      this.snackbarTimer = setTimeout(() => this.dismissSuccess(), 6000);
     } catch {
       this.result.set(registered ? 'warning' : 'error');
       this.feedback.set(

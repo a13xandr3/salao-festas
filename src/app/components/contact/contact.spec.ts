@@ -6,12 +6,17 @@ import { Contact } from './contact';
 
 describe('Contact with Gmail', () => {
   beforeEach(async () => {
+    jest.useFakeTimers();
     await TestBed.configureTestingModule({
       imports: [Contact],
       providers: [provideHttpClient(), provideHttpClientTesting(), provideTestConfig()],
     }).compileComponents();
   });
-  afterEach(() => TestBed.inject(HttpTestingController).verify());
+  afterEach(() => {
+    TestBed.inject(HttpTestingController).verify();
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
   function setup() {
     const fixture = TestBed.createComponent(Contact);
     fixture.detectChanges();
@@ -140,5 +145,46 @@ describe('Contact with Gmail', () => {
     expect(input.selectionStart).toBe(7);
   });
 
+  async function queuedContact() {
+    const context = setup();
+    context.fill(); context.submit();
+    context.http.expectOne(rpcUrl('booking_create_contact')).flush({ id: 'contact-id', deliveryToken: 'a'.repeat(64) });
+    await context.advance();
+    context.http.expectOne(emailUrl).flush({ sent: false, queued: true });
+    await context.advance();
+    return context;
+  }
+  it('shows queued success as an accessible snackbar and dismisses it after six seconds', async () => {
+    const { element, fixture } = await queuedContact();
+    expect(element.querySelector('.alert-success')).toBeNull();
+    expect(element.querySelector('.contact-snackbar')!.getAttribute('role')).toBe('status');
+    expect(element.querySelector('.contact-snackbar')!.textContent).toContain('será enviada');
+    jest.advanceTimersByTime(5999); fixture.detectChanges();
+    expect(element.querySelector('.contact-snackbar')).not.toBeNull();
+    jest.advanceTimersByTime(1); fixture.detectChanges();
+    expect(element.querySelector('.contact-snackbar')).toBeNull();
+  });
+  it('allows manual dismissal and cancels the scheduled dismissal', async () => {
+    const { element, fixture } = await queuedContact();
+    const dismiss = jest.spyOn(fixture.componentInstance, 'dismissSuccess' as never);
+    element.querySelector<HTMLButtonElement>('[aria-label="Fechar aviso"]')!.click(); fixture.detectChanges();
+    expect(element.querySelector('.contact-snackbar')).toBeNull();
+    jest.advanceTimersByTime(6000);
+    expect(dismiss).toHaveBeenCalledTimes(1);
+  });
+  it('cancels the snackbar timer when the component is destroyed', async () => {
+    const { fixture } = await queuedContact();
+    const dismiss = jest.spyOn(fixture.componentInstance, 'dismissSuccess' as never);
+    fixture.destroy(); jest.advanceTimersByTime(6000);
+    expect(dismiss).not.toHaveBeenCalled();
+  });
+  it('does not let an earlier success timer hide a later request failure', async () => {
+    const { fill, submit, http, advance, element, fixture } = await queuedContact();
+    fill(); submit();
+    expect(element.querySelector('.contact-snackbar')).toBeNull();
+    http.expectOne(rpcUrl('booking_create_contact')).flush({}, { status: 503, statusText: 'Unavailable' });
+    await advance(); jest.advanceTimersByTime(6000); fixture.detectChanges();
+    expect(element.querySelector('.alert-danger')!.textContent).toContain('Não foi possível registrar');
+  });
 
 });
