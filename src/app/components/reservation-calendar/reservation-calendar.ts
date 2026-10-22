@@ -54,8 +54,9 @@ export class ReservationCalendar {
   );
   protected readonly unavailableReason = computed(() => {
     const day = this.selectedDay();
+    if (day?.status === 'pre_reserved') return 'Pré-reservado, aguardando confirmação do pagamento. Escolha outra data livre no calendário.';
     if (day?.status === 'reserved') return 'Reservado. Escolha outra data livre no calendário.';
-    if (day?.past) return 'O período desta data já começou. Escolha uma data futura.';
+    if (day?.past) return 'Indisponível. Escolha uma data futura.';
     return 'Disponibilidade não consultada. Atualize a agenda antes de reservar.';
   });
 

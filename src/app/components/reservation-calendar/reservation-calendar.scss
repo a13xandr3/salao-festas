@@ -61,7 +61,6 @@ button:disabled {
   opacity: 0.45;
 }
 .calendar-panel {
-  container-type: inline-size;
   background: #ffffff30;
   border: 1px solid #62694d33;
   border-radius: 1.25rem;
@@ -130,6 +129,12 @@ button:disabled {
 }
 .calendar-day.full {
   background: #934e4320;
+}
+.calendar-day.pending {
+  background: #bd8b2b26;
+}
+.calendar-day.unavailable {
+  background: #62694d12;
 }
 .calendar-day.today {
   border-color: #62694d88;
@@ -208,7 +213,10 @@ button:disabled {
   font-size: 0.65rem;
   line-height: 1.4;
   letter-spacing: -0.025em;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .legend-dot {
@@ -222,8 +230,5 @@ button:disabled {
   background: #934e43;
 }
 
-@container (max-width: 28rem) {
-  .day-state {
-    display: none;
-  }
-}
+.legend-dot.pending { background: #9b701f; }
+.legend-dot.unavailable { background: #777; }

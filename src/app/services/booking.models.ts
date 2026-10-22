@@ -29,7 +29,7 @@ export interface ReservationReceipt {
 
 export interface Availability {
   month: string;
-  days: { date: string; status: 'free' | 'reserved' }[];
+  days: { date: string; status: 'free' | 'pre_reserved' | 'reserved' }[];
 }
 
 export interface ContactReceipt {

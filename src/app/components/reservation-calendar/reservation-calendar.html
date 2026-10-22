@@ -20,7 +20,7 @@
             @for (weekday of weekdays; track weekday) { <span class="weekday" aria-hidden="true">{{ weekday }}</span> }
             @for (day of days(); track $index) {
               @if (day.date) {
-                <button type="button" class="calendar-day" [class.free]="day.status === 'free'" [class.full]="day.status === 'reserved'" [class.selected]="selected() === day.date" [class.today]="day.date === now().date" [disabled]="day.past || loading() || error()" [attr.aria-label]="day.description" [attr.aria-pressed]="selected() === day.date" [attr.aria-current]="day.date === now().date ? 'date' : null" (click)="select(day.date)">
+                <button type="button" class="calendar-day" [class.free]="day.status === 'free'" [class.full]="day.status === 'reserved'" [class.pending]="day.status === 'pre_reserved'" [class.unavailable]="day.status === 'unavailable'" [class.selected]="selected() === day.date" [class.today]="day.date === now().date" [disabled]="day.past || loading() || error()" [attr.aria-label]="day.description" [attr.aria-pressed]="selected() === day.date" [attr.aria-current]="day.date === now().date ? 'date' : null" (click)="select(day.date)">
                   <span>{{ day.number }}</span><span class="day-state">{{ day.label }}</span>
                 </button>
               } @else { <span aria-hidden="true"></span> }
@@ -29,6 +29,8 @@
         </div>
         <ul class="calendar-legend" aria-label="Legenda de disponibilidade">
           <li><span class="legend-dot free" aria-hidden="true"></span>Livre</li>
+          <li><span class="legend-dot pending" aria-hidden="true"></span>Pré-reservado</li>
+          <li><span class="legend-dot unavailable" aria-hidden="true"></span>Indisponível</li>
           <li><span class="legend-dot full" aria-hidden="true"></span>Reservado</li>
         </ul>
       </div>

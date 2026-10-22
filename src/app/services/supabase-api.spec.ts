@@ -143,4 +143,10 @@ describe('Supabase integration on GitHub Pages', () => {
     backend.expectNone(request => request.url.includes('/rest/v1/'));
   });
 
+  it('preserves the public pending-payment status for calendar classification', () => {
+    const received = jest.fn(); api.availability('2028-02').subscribe(received); configure();
+    rpc('booking_availability').flush({ month: '2028-02', days: [{ date: '2028-02-28', status: 'pre_reserved' }] });
+    expect(received).toHaveBeenCalledWith({ month: '2028-02', days: [{ date: '2028-02-28', status: 'pre_reserved' }] });
+  });
+
 });

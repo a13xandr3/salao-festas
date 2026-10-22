@@ -4,10 +4,12 @@ interface LocalDateTime {
   date: string;
   time: string;
 }
-type DayStatus = 'free' | 'reserved' | 'unknown';
+type DayStatus = 'free' | 'pre_reserved' | 'reserved' | 'unavailable' | 'unknown';
 const statusLabels: Record<DayStatus, string> = {
   free: 'Livre',
+  pre_reserved: 'Pré-reservado',
   reserved: 'Reservado',
+  unavailable: 'Indisponível',
   unknown: '—',
 };
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -53,9 +55,12 @@ export function calendarDays(month: string, availability: Availability | null, n
   return monthDays(month).map((date) => {
     if (!date)
       return { date: '', number: '', status: 'unknown', past: true, label: '', description: '' };
-    const status = states.get(date) ?? 'unknown';
+    const availabilityStatus = states.get(date) ?? 'unknown';
+    const occupied = availabilityStatus === 'reserved' || availabilityStatus === 'pre_reserved';
+    const status: DayStatus = date <= now.date && !occupied
+      ? 'unavailable' : availabilityStatus;
     const label = statusLabels[status];
-    const past = date < now.date || (date === now.date && now.time >= '08:00');
+    const past = date <= now.date;
     return {
       date,
       number: String(Number(date.slice(8))),

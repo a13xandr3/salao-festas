@@ -27,7 +27,7 @@ describe('ReservationCalendar', () => {
     const http = TestBed.inject(HttpTestingController);
     const element = fixture.nativeElement as HTMLElement;
     const respond = (
-      reservations: { date: string; start: string; end: string }[] = [],
+      reservations: { date: string; start: string; end: string; pending?: boolean }[] = [],
       month = '2028-02',
     ) => {
       const request = http.expectOne(
@@ -38,7 +38,7 @@ describe('ReservationCalendar', () => {
         const date = `${month}-${String(i + 1).padStart(2, '0')}`;
         return {
           date,
-          status: reservations.some((item) => item.date === date) ? 'reserved' : 'free',
+          status: reservations.some((item) => item.date === date && item.pending) ? 'pre_reserved' : reservations.some((item) => item.date === date) ? 'reserved' : 'free',
         };
       });
       request.flush({
@@ -99,9 +99,10 @@ describe('ReservationCalendar', () => {
   it('shows unknown availability instead of claiming a future day has already started', () => {
     const { element, http, fixture } = setup();
     http.expectOne(rpcUrl('booking_availability')).flush({ month: '2028-02', days: [] });
+    fixture.componentInstance['select']('2028-02-11');
     fixture.detectChanges();
     expect(element.querySelector('.day-details')?.textContent).toContain('Disponibilidade não consultada');
-    expect(element.querySelector('.day-details')?.textContent).not.toContain('já começou');
+    expect(element.querySelector('.day-details')?.textContent).not.toContain('Indisponível');
     expect(element.querySelectorAll('.calendar-day.free')).toHaveLength(0);
   });
 
@@ -141,7 +142,7 @@ describe('ReservationCalendar', () => {
     fixture.componentInstance['changeMonth'](-1); respond();
     expect(element.querySelector('.calendar-day.selected')?.getAttribute('aria-label')).toContain('10 de fevereiro');
     fixture.componentInstance['select']('2028-02-09'); fixture.detectChanges();
-    expect(element.querySelector('.day-details')?.textContent).toContain('já começou');
+    expect(element.querySelector('.day-details')?.textContent).toContain('Indisponível');
   });
   it('hides pre-reservation while handling an emailed contract action', () => {
     history.replaceState(null, '', '/#enviar-contrato');
@@ -172,6 +173,21 @@ describe('ReservationCalendar', () => {
     link.addEventListener('click', event => event.preventDefault()); link.click(); fixture.detectChanges();
     expect(preReservation.parentElement!.hidden).toBe(false);
     expect(preReservation.querySelector<HTMLInputElement>('#pre-start-date')!.value).toBe('2028-02-28');
+  });
+
+  it('blocks today before 08h and distinguishes unpaid reservations from confirmed ones', () => {
+    const { respond, element, fixture } = setup();
+    respond([{ date: '2028-02-11', start: '08:00', end: '24:00', pending: true }]);
+    const today = element.querySelector<HTMLButtonElement>('.calendar-day.today')!;
+    expect(today.disabled).toBe(true);
+    expect(today.textContent).toContain('Indisponível');
+    expect(element.querySelector('.contact-link')).toBeNull();
+    const pending = element.querySelector<HTMLButtonElement>('.calendar-day[aria-label*="11 de fevereiro"]')!;
+    expect(pending.textContent).toContain('Pré-reservado');
+    pending.click(); fixture.detectChanges();
+    expect(element.querySelector('.day-details')!.textContent).toContain('aguardando confirmação do pagamento');
+    expect(element.querySelector('.contact-link')).toBeNull();
+    expect(element.querySelector('.calendar-legend')!.textContent).toContain('Pré-reservado');
   });
 
 });
