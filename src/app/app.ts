@@ -1,4 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Meta, Title } from '@angular/platform-browser';
+import { Login } from './components/login/login';
+import { afterNextRender, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Navbar } from './components/navbar/navbar';
 import { Presentation } from './components/presentation/presentation';
@@ -14,6 +17,7 @@ import { Footer } from './components/footer/footer';
   selector: 'app-root',
   imports: [
     RouterOutlet,
+    Login,
     Navbar,
     Presentation,
     TopSpaces,
@@ -26,4 +30,19 @@ import { Footer } from './components/footer/footer';
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {}
+export class App {
+  protected readonly restricted = signal(false);
+  private readonly document = inject(DOCUMENT);
+  private readonly meta = inject(Meta);
+  private readonly title = inject(Title);
+
+  constructor() {
+    afterNextRender(() => {
+      if (new URLSearchParams(this.document.location.search).get('area') === 'restrita') {
+        this.restricted.set(true);
+        this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
+        this.title.setTitle('Área restrita | Espaço TX');
+      }
+    });
+  }
+}

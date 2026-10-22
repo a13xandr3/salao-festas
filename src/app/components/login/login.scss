@@ -1,0 +1,9 @@
+:host { display: block; padding: clamp(1rem, 5vw, 3rem); }
+.restricted-area { max-width: 32rem; margin: auto; padding: clamp(1rem, 5vw, 2rem); border: 1px solid #62694d33; border-radius: 1.25rem; background: #fff; color: #293126; overflow-wrap: anywhere; }
+.brand { color: #62694d; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-decoration: none; }
+.totp-qr { display: block; max-width: 100%; height: auto; margin: 1rem auto; }
+input, button, summary { min-height: 44px; }
+summary { cursor: pointer; }
+a { color: #303b2c; }
+
+.restricted-area.has-panel { max-width: 72rem; }

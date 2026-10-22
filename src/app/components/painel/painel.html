@@ -1,0 +1,44 @@
+@if (auth.authorized()) {
+  <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+    <h1 class="h3 m-0">Painel</h1>
+    <button type="button" class="btn btn-outline-dark ms-auto flex-shrink-0" [disabled]="busy()" (click)="signOut.emit()">Logout</button>
+  </div>
+  <p class="text-break">{{ auth.email() }}</p>
+  <nav class="nav nav-pills flex-column flex-sm-row gap-2 my-4" aria-label="Navegação do painel">
+    <a href="#lista-contatos" class="nav-link" [class.active]="selectedList() === 'contacts'" [attr.aria-current]="selectedList() === 'contacts' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('contacts')">Lista de contatos</a>
+    <a href="#lista-pre-reservas" class="nav-link" [class.active]="selectedList() === 'preReservations'" [attr.aria-current]="selectedList() === 'preReservations' ? 'page' : null" [attr.aria-disabled]="loading() || busy()" (click)="$event.preventDefault(); load('preReservations')">Lista de pré-reservas</a>
+  </nav>
+  @if (selectedList(); as list) {
+    <section [id]="list === 'contacts' ? 'lista-contatos' : 'lista-pre-reservas'" [attr.aria-busy]="loading()" aria-labelledby="list-title">
+      <h2 id="list-title" class="h4">{{ list === 'contacts' ? 'Lista de contatos' : 'Lista de pré-reservas' }}</h2>
+      @if (loading()) { <p role="status">Carregando…</p> }
+      @else if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
+      @else if (!rows().length) { <p role="status">Nenhum registro encontrado.</p> }
+      @else {
+        <div class="table-responsive" tabindex="0" role="region" aria-labelledby="list-title">
+          <table class="table align-middle">
+            <caption>Até 100 registros mais recentes. Somente leitura.</caption>
+            <thead><tr><th scope="col">Nome</th><th scope="col">Contato</th>
+              @if (list === 'contacts') { <th scope="col">Mensagem</th> }
+              @else { <th scope="col">Período</th><th scope="col">Status</th> }
+              <th scope="col">Criado em</th>
+            </tr></thead>
+            <tbody>
+              @for (row of rows(); track row.id) {
+                <tr>
+                  <td class="text-break">{{ row.name }}</td>
+                  <td class="text-break">{{ row.email }}<br>{{ row.phone }}</td>
+                  @if (list === 'contacts') { <td class="text-break">{{ row.message }}</td> }
+                  @else { <td>{{ row.startDate | date:'dd/MM/yyyy':'UTC' }} a {{ row.endDate | date:'dd/MM/yyyy':'UTC' }}</td><td class="text-break">{{ statusLabels[row.status || ''] || 'Não informado' }}</td> }
+                  <td>{{ row.createdAt | date:'dd/MM/yyyy HH:mm':'-0300' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+} @else {
+  <p role="alert">Faça o login com autenticação em dois fatores para acessar o painel.</p>
+}

@@ -18,6 +18,10 @@ describe('Navbar', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+    const restricted = fixture.nativeElement.querySelector('a[href="?area=restrita"]');
+    expect(restricted.textContent).toContain('Área restrita');
+    expect(restricted.getAttribute('target')).toBe('_blank');
+    expect(restricted.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
   it('toggles the menu, closes on navigation and returns focus on Escape', () => {

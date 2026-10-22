@@ -1,3 +1,6 @@
+@if (restricted()) {
+  @defer (when restricted()) { <app-login></app-login> }
+} @else {
 <div class="container p-0 my-3 my-lg-4" style="background: radial-gradient(ellipse at top left, #e5e1c8 0%, transparent 60%), linear-gradient(110deg, #eeece4, #e5e5da 55%, #efede3); border-radius: 1.25rem; color: #293126;">
   <app-navbar id="inicio"></app-navbar>
   <main id="conteudo">
@@ -11,3 +14,5 @@
   </main>
   <app-footer></app-footer>
 </div>
+
+}
