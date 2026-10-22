@@ -40,6 +40,23 @@ export class Contact {
     message: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(2000)]],
   });
 
+  protected maskPhone(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitsBeforeCursor = input.value.slice(0, input.selectionStart!).replace(/\D/g, '').length;
+    const digits = input.value.replace(/\D/g, '').slice(0, 11);
+    const split = digits.length > 10 ? 7 : 6;
+    let formatted = digits ? `(${digits.slice(0, 2)}` : '';
+    if (digits.length >= 2) formatted += ')';
+    if (digits.length > 2) formatted += ` ${digits.slice(2, split)}`;
+    if (digits.length > split) formatted += `-${digits.slice(split)}`;
+    input.value = formatted;
+    this.form.controls.phone.setValue(formatted);
+    const position = [...formatted].reduce((cursor, character, index) =>
+      /\d/.test(character) && formatted.slice(0, index + 1).replace(/\D/g, '').length <= digitsBeforeCursor
+        ? index + 1 : cursor, 0);
+    input.setSelectionRange(position, position);
+  }
+
   protected invalid(field: keyof typeof this.form.controls): boolean {
     const control = this.form.controls[field];
     return control.invalid && control.touched;

@@ -119,4 +119,26 @@ describe('Contact with Gmail', () => {
     http.expectNone(rpcUrl('booking_create_contact')); http.expectNone(emailUrl);
   });
 
+  it.each([
+    ['', ''], ['1', '(1'], ['18', '(18)'], ['189', '(18) 9'],
+    ['1899655549', '(18) 9965-5549'], ['18996555494', '(18) 99655-5494'],
+    ['(18) 99655-5494', '(18) 99655-5494'], ['abc18996555494123', '(18) 99655-5494'],
+  ])('masks the contact phone %s as %s', (value, expected) => {
+    const { element, fixture } = setup();
+    const input = element.querySelector<HTMLInputElement>('#contact-phone')!;
+    input.value = value; input.dispatchEvent(new Event('input')); fixture.detectChanges();
+    expect(input.value).toBe(expected);
+    expect(fixture.componentInstance['form'].controls.phone.value).toBe(expected);
+    expect(input.placeholder).toBe('(99) 99999-9999');
+    expect(input.maxLength).toBe(15);
+  });
+  it('preserves the cursor position when editing the contact phone', () => {
+    const { element } = setup();
+    const input = element.querySelector<HTMLInputElement>('#contact-phone')!;
+    input.value = '(18) 98655-5494'; input.setSelectionRange(7, 7);
+    input.dispatchEvent(new Event('input'));
+    expect(input.selectionStart).toBe(7);
+  });
+
+
 });
