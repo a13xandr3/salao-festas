@@ -145,6 +145,18 @@ describe('AdminAuth', () => {
     query.overrideTypes.mockResolvedValue(ok(null)); expect(await service.list(type)).toEqual([]);
     query.overrideTypes.mockResolvedValue(failure()); await expect(service.list(type)).rejects.toThrow();
   });
+  it.each([
+    ['2026-09', '2026-10'], ['2026-12', '2027-01'], ['2028-02', '2028-03'],
+  ])('filters cancelled events for %s before applying the row limit', async (month, next) => {
+    await signIn(); await service.verify('123456');
+    const query = {select:jest.fn().mockReturnThis(),gte:jest.fn().mockReturnThis(),lt:jest.fn().mockReturnThis(),order:jest.fn().mockReturnThis(),limit:jest.fn().mockReturnThis(),overrideTypes:jest.fn().mockResolvedValue(ok([]))};
+    client.from = jest.fn().mockReturnValue(query);
+    await service.list('pre_reservas_canceladas', month);
+    expect(query.gte).toHaveBeenCalledWith('startDate', month + '-01');
+    expect(query.lt).toHaveBeenCalledWith('startDate', next + '-01');
+    expect(query.lt.mock.invocationCallOrder[0]).toBeLessThan(query.limit.mock.invocationCallOrder[0]);
+    await expect(service.list('pre_reservas_canceladas', '2026-13')).rejects.toThrow('Período inválido');
+  });
   it('protects financial RPCs with the same AAL2 session and propagates failures', async () => {
     await expect(service.finance('dashboard', { p_month: '2026-10' })).rejects.toThrow('Acesso restrito');
     await signIn(); await service.verify('123456');

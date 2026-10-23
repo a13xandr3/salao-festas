@@ -1,25 +1,21 @@
 <section aria-labelledby="finance-title" [attr.aria-busy]="loading() || saving()">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
     <h2 id="finance-title" class="h4 m-0">Financeiro · Fluxo de caixa</h2>
-    @if (tab() !== 'cancelled') {
     <form class="finance-period d-flex flex-wrap align-items-end gap-2" [formGroup]="period" (ngSubmit)="applyPeriod()">
       <div><label for="finance-month" class="form-label">Período</label><input id="finance-month" type="month" class="form-control" formControlName="month" required [readOnly]="loading() || saving() || disabled()"></div>
       <button class="btn btn-outline-dark" [disabled]="loading() || saving() || disabled()">Consultar</button>
     </form>
-    }
   </div>
   @if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
   @if (notice()) { <p class="alert alert-success" role="status">{{ notice() }}</p> }
   @if (loading()) { <p role="status">Consultando o financeiro…</p> }
   @if (snapshot(); as data) {
-    @if (tab() !== 'cancelled' && tab() !== 'expenses') {
     <div class="row g-3 mb-3" aria-label="Resumo financeiro">
       <div class="col-12 col-sm-6 col-xl-3"><div class="finance-card"><span>Entradas</span><strong>{{ data.summary.income | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div></div>
       <div class="col-12 col-sm-6 col-xl-3"><div class="finance-card"><span>Saídas</span><strong>{{ data.summary.expenses | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div></div>
       <div class="col-12 col-sm-6 col-xl-3"><div class="finance-card"><span>Saldo final</span><strong>{{ data.summary.closingBalance | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div></div>
       <div class="col-12 col-sm-6 col-xl-3"><div class="finance-card"><span>A receber · eventos do período</span><strong>{{ data.summary.amountDue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div></div>
     </div>
-    }
   }
     <div class="nav nav-tabs mb-3" role="tablist" aria-label="Visões do financeiro">
       @for (item of tabs; track item.id) {
@@ -125,11 +121,11 @@
             <button type="button" class="btn btn-outline-dark" (click)="refreshCancelled()" [disabled]="loading() || saving() || disabled()">Atualizar lista</button>
           </div>
           @if (cancelled(); as rows) {
-            @if (!rows.length) { <p role="status">Nenhum registro cancelado encontrado.</p> }
+            @if (!rows.length) { <p role="status">Nenhum registro cancelado com início no mês selecionado.</p> }
             @else {
               <div class="table-responsive" tabindex="0" role="region" aria-labelledby="cancelled-title">
                 <table class="table finance-table align-middle">
-                  <caption>Até 100 registros mais recentes, independentemente do período do financeiro. Somente leitura.</caption>
+                  <caption>Até 100 registros cancelados com início no mês selecionado. Somente leitura.</caption>
                   <thead><tr><th>Nome / Protocolo</th><th>Contato</th><th>Período</th><th>Status</th><th>Motivo da reprovação</th><th>Reprovada em</th><th>Devolução registrada</th><th>Criado em</th></tr></thead>
                   <tbody>
                     @for (row of rows; track row.id) {

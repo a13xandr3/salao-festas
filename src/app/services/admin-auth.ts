@@ -92,14 +92,21 @@ export class AdminAuth {
     }
   }
 
-  async list(type: AdminList): Promise<AdminListRow[]> {
+  async list(type: AdminList, month?: string): Promise<AdminListRow[]> {
     if (!this.authorized()) throw new Error('Acesso restrito.');
     const client = await this.client();
     const columns = type === 'contacts'
       ? 'id,name,email,phone,message,createdAt'
       : 'id,name,email,phone,startDate,endDate,status,createdAt';
     const selectedColumns = type === 'pre_reservas_canceladas' ? columns + ',rejectionReason,rejectedAt,rejectionRefundAmount' : columns;
-    const result = await client.from(type).select(selectedColumns).order('createdAt', { ascending: false }).limit(100).overrideTypes<AdminListRow[], { merge: false }>();
+    const query = client.from(type).select(selectedColumns);
+    if (type === 'pre_reservas_canceladas' && month !== undefined) {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Período inválido.');
+      const [year, monthNumber] = month.split('-').map(Number);
+      const nextMonth = monthNumber === 12 ? `${String(year + 1).padStart(4, '0')}-01` : `${year}-${String(monthNumber + 1).padStart(2, '0')}`;
+      query.gte('startDate', `${month}-01`).lt('startDate', `${nextMonth}-01`);
+    }
+    const result = await query.order('createdAt', { ascending: false }).limit(100).overrideTypes<AdminListRow[], { merge: false }>();
     if (result.error) throw result.error;
     return result.data ?? [];
   }

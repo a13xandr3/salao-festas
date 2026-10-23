@@ -101,7 +101,6 @@ export class CashFlow implements OnInit {
   protected async refresh(): Promise<void> {
     this.period.markAllAsTouched();
     if (this.period.invalid || this.loading() || this.saving() || this.disabled()) return;
-    if (this.tab() === 'expenses') { await this.refreshExpenses(); return; }
     this.loading.set(true); this.error.set('');
     try {
       this.snapshot.set(await this.auth.finance<FinanceOverview>('overview', {
@@ -110,6 +109,8 @@ export class CashFlow implements OnInit {
     } catch (error) {
       this.snapshot.set(null); this.error.set(financeError(error));
     } finally { this.loading.set(false); }
+    if (this.tab() === 'expenses') await this.refreshExpenses();
+    if (this.tab() === 'cancelled') await this.refreshCancelled();
   }
 
   protected async applyPeriod(): Promise<void> {
@@ -130,9 +131,10 @@ export class CashFlow implements OnInit {
   }
 
   protected async refreshCancelled(): Promise<void> {
-    if (this.loading() || this.saving() || this.disabled()) return;
+    this.period.markAllAsTouched();
+    if (this.period.invalid || this.loading() || this.saving() || this.disabled()) return;
     this.loading.set(true); this.error.set(''); this.cancelled.set(null);
-    try { this.cancelled.set(await this.auth.list('pre_reservas_canceladas')); }
+    try { this.cancelled.set(await this.auth.list('pre_reservas_canceladas', this.period.controls.month.value)); }
     catch { this.error.set('Não foi possível carregar os cancelados. Tente novamente.'); }
     finally { this.loading.set(false); }
   }

@@ -28,6 +28,23 @@ describe('CashFlow', () => {
   function price(component: CashFlow) {
     component['price'].setValue({ reservationId: id, dailyRate: '350,00', reason: ' Desconto combinado ' });
   }
+  it('keeps the period and summary on every tab and refreshes the selected month', async () => {
+    const {component, auth, fixture, element} = await setup();
+    auth.finance.mockImplementation((action: string) => Promise.resolve(action === 'overview' ? dashboard() : {month:'2026-09',total:0,count:0,entries:[]}));
+    for (const tab of ['reservations', 'price', 'entry', 'expenses', 'cancelled'] as const) {
+      await component['selectTab'](tab); fixture.detectChanges();
+      expect(element.querySelector('#finance-month')).not.toBeNull();
+      expect(element.querySelectorAll('.finance-card')).toHaveLength(4);
+    }
+    component['period'].controls.month.setValue('2026-09');
+    await component['applyPeriod']();
+    expect(auth.finance).toHaveBeenLastCalledWith('overview', {p_month:'2026-09',p_reservation_page:0});
+    expect(auth.list).toHaveBeenLastCalledWith('pre_reservas_canceladas', '2026-09');
+    await component['selectTab']('expenses');
+    await component['applyPeriod']();
+    expect(auth.finance).toHaveBeenNthCalledWith(auth.finance.mock.calls.length - 1, 'overview', {p_month:'2026-09',p_reservation_page:0});
+    expect(auth.finance).toHaveBeenLastCalledWith('expenses', {p_month:'2026-09',p_page:0});
+  });
   it('masks money while typing, accepts pasted amounts and sends numeric values', async () => {
     const {component, auth, fixture, element} = await setup();
     for (const [tab, selector, control] of [
@@ -84,7 +101,7 @@ describe('CashFlow', () => {
     expect(element.querySelector('tbody')!.textContent).toContain('22/10/2026');expect(element.querySelector('tbody')!.textContent).toContain('Cloro para piscina');expect(element.querySelector('tbody')!.textContent).toContain('80,00');
     auth.finance.mockResolvedValueOnce({...report,entries:[]});await component['changeExpensePage'](1);expect(component['expensePage']()).toBe(1);
     expect(auth.finance).toHaveBeenLastCalledWith('expenses',{p_month:'2026-10',p_page:1});
-    component['period'].controls.month.setValue('2026-09');auth.finance.mockResolvedValueOnce({month:'2026-09',total:0,count:0,entries:[]});
+    component['period'].controls.month.setValue('2026-09');auth.finance.mockResolvedValueOnce(dashboard()).mockResolvedValueOnce({month:'2026-09',total:0,count:0,entries:[]});
     const apply=jest.spyOn(component as any,'applyPeriod');element.querySelector('form')!.dispatchEvent(new Event('submit',{cancelable:true}));await apply.mock.results[0].value;fixture.detectChanges();
     expect(component['expensePage']()).toBe(0);expect(element.textContent).toContain('Nenhuma despesa registrada');expect(element.querySelector('p.text-end')!.textContent).toContain('09/2026');
     expect(auth.finance).toHaveBeenLastCalledWith('expenses',{p_month:'2026-09',p_page:0});
@@ -129,12 +146,12 @@ describe('CashFlow', () => {
     const select=jest.spyOn(component as any,'selectTab');
     Array.from(element.querySelectorAll<HTMLButtonElement>('[role=tab]')).find(button=>button.textContent?.trim()==='Cancelados')!.click();
     await select.mock.results[0].value;fixture.detectChanges();
-    expect(auth.list).toHaveBeenCalledWith('pre_reservas_canceladas');
+    expect(auth.list).toHaveBeenCalledWith('pre_reservas_canceladas', component['period'].controls.month.value);
     const report=element.querySelector('#lista-cancelados')!;
     expect(report.textContent).toContain('Cliente cancelado');expect(report.textContent).toContain('Cliente desistiu');
     expect(report.textContent).toContain('23/10/2026 12:00');expect(report.textContent).toContain('800,00');
-    expect(report.textContent).toContain('cancelled-id');expect(report.textContent).toContain('independentemente do período');
-    expect(element.querySelector('#finance-month')).toBeNull();expect(element.querySelector('[aria-label="Resumo financeiro"]')).toBeNull();
+    expect(report.textContent).toContain('cancelled-id');expect(report.textContent).toContain('com início no mês selecionado');
+    expect(element.querySelector('#finance-month')).not.toBeNull();expect(element.querySelectorAll('.finance-card')).toHaveLength(4);
     expect(report.querySelectorAll('tbody button')).toHaveLength(0);
     component['selectTab']('reservations');fixture.detectChanges();expect(element.querySelector('#lista-cancelados')).toBeNull();
     auth.list.mockResolvedValueOnce([]);await component['selectTab']('cancelled');fixture.detectChanges();
