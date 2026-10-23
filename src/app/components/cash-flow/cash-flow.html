@@ -28,6 +28,12 @@
       }
     </div>
     <div id="finance-panel" role="tabpanel" [attr.aria-labelledby]="'finance-tab-' + tab()" tabindex="0">
+      @if (tab() === 'reservations') {
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+          <h3 class="h5 m-0">Pré-Reservas/Reservas</h3>
+          <button type="button" class="btn btn-outline-dark" (click)="refresh()" [disabled]="loading() || saving() || disabled()">Atualizar lista</button>
+        </div>
+      }
       @if (tab() === 'reservations' && snapshot(); as data) {
         <details class="finance-help mb-3">
           <summary><span aria-hidden="true">-&gt;</span> Como gerenciar pré-reservas e reservas</summary>
@@ -85,7 +91,10 @@
       }
       @if (tab() === 'expenses') {
         <section aria-labelledby="expenses-title">
-          <h3 id="expenses-title" class="h5">Despesas</h3>
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <h3 id="expenses-title" class="h5 m-0">Despesas</h3>
+            <button type="button" class="btn btn-outline-dark" (click)="refreshExpenses()" [disabled]="loading() || saving() || disabled()">Atualizar lista</button>
+          </div>
           @if (expenses(); as report) {
             <p class="text-end mb-3" role="status">Total das despesas em {{ report.month + '-01' | date:'MM/yyyy':'UTC' }}: <strong>{{ report.total | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></p>
             @if (!report.entries.length) { <p>Nenhuma despesa registrada no mês selecionado.</p> }
