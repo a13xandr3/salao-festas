@@ -75,6 +75,7 @@ describe('Painel', () => {
     auth.list.mockResolvedValueOnce([{
       id: 'cancelled', name: 'Cliente cancelado', email: 'cancelled@example.com', phone: '11999999999',
       startDate: '2026-10-25', endDate: '2026-10-26', status: 'cancelled', createdAt: '2026-10-22T15:00:00Z',
+      rejectionReason: 'Cliente desistiu', rejectedAt: '2026-10-23T15:00:00Z', rejectionRefundAmount: 800,
     }]);
     const link = element.querySelector<HTMLAnchorElement>('a[href="#lista-cancelados"]')!;
     link.click(); await fixture.whenStable(); fixture.detectChanges();
@@ -82,6 +83,9 @@ describe('Painel', () => {
     expect(link.getAttribute('aria-current')).toBe('page');
     expect(element.querySelector('.panel-results #lista-cancelados h2')!.textContent).toBe('Cancelados');
     expect(element.querySelector('tbody')!.textContent).toContain('Cliente cancelado');
+    expect(element.querySelector('tbody')!.textContent).toContain('Cliente desistiu');
+    expect(element.querySelector('tbody')!.textContent).toContain('23/10/2026 12:00');
+    expect(element.querySelector('tbody')!.textContent).toContain('800');
     expect(element.querySelector('tbody')!.textContent).toContain('Cancelado');
     expect(element.querySelector('tbody')!.textContent).toContain('25/10/2026 a 26/10/2026');
     expect(element.querySelector('.panel-empty')).toBeNull();

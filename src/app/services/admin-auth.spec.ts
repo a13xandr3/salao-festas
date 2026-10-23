@@ -137,7 +137,8 @@ describe('AdminAuth', () => {
     client.from = jest.fn().mockReturnValue(query);
     expect(await service.list(type)).toEqual(records);
     expect(client.from).toHaveBeenCalledWith(type);
-    expect(query.select).toHaveBeenCalledWith(type === 'contacts' ? 'id,name,email,phone,message,createdAt' : 'id,name,email,phone,startDate,endDate,status,createdAt');
+    const columns = type === 'contacts' ? 'id,name,email,phone,message,createdAt' : 'id,name,email,phone,startDate,endDate,status,createdAt';
+    expect(query.select).toHaveBeenCalledWith(type === 'pre_reservas_canceladas' ? columns + ',rejectionReason,rejectedAt,rejectionRefundAmount' : columns);
     expect(query.select.mock.calls[0][0]).not.toContain('Token');
     expect(query.order).toHaveBeenCalledWith('createdAt', { ascending: false });
     expect(query.limit).toHaveBeenCalledWith(100);
@@ -150,6 +151,14 @@ describe('AdminAuth', () => {
     client.rpc.mockResolvedValue(ok({ summary: {} }));
     expect(await service.finance('dashboard', { p_month: '2026-10' })).toEqual({ summary: {} });
     expect(client.rpc).toHaveBeenLastCalledWith('booking_finance_dashboard', { p_month: '2026-10' });
+    client.rpc.mockResolvedValue(ok({ cancelled: true }));
+    expect(await service.finance('cancel', { p_id: 'reservation-id' })).toEqual({ cancelled: true });
+    expect(client.rpc).toHaveBeenLastCalledWith('booking_finance_cancel', { p_id: 'reservation-id' });
+    for (const action of ['overview', 'negotiate', 'approve', 'reject'] as const) {
+      client.rpc.mockResolvedValue(ok({ id: 'result' }));
+      expect(await service.finance(action, {})).toEqual({ id: 'result' });
+      expect(client.rpc).toHaveBeenLastCalledWith(`booking_finance_${action}`, {});
+    }
     client.rpc.mockResolvedValue(failure()); await expect(service.finance('post', {})).rejects.toThrow();
     client.rpc.mockResolvedValue(ok(null)); await expect(service.finance('price', {})).rejects.toThrow('Resposta financeira indisponível');
   });

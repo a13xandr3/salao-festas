@@ -6,6 +6,7 @@ import { SiteConfig } from './site-config';
 export type AdminList = 'contacts' | 'preReservations' | 'pre_reservas_canceladas';
 export interface AdminListRow {
   id: string; name: string; email: string; phone: string; createdAt: string;
+  rejectionReason?: string; rejectedAt?: string; rejectionRefundAmount?: number;
   message?: string; startDate?: string; endDate?: string; status?: string;
 }
 
@@ -97,12 +98,13 @@ export class AdminAuth {
     const columns = type === 'contacts'
       ? 'id,name,email,phone,message,createdAt'
       : 'id,name,email,phone,startDate,endDate,status,createdAt';
-    const result = await client.from(type).select(columns).order('createdAt', { ascending: false }).limit(100).overrideTypes<AdminListRow[], { merge: false }>();
+    const selectedColumns = type === 'pre_reservas_canceladas' ? columns + ',rejectionReason,rejectedAt,rejectionRefundAmount' : columns;
+    const result = await client.from(type).select(selectedColumns).order('createdAt', { ascending: false }).limit(100).overrideTypes<AdminListRow[], { merge: false }>();
     if (result.error) throw result.error;
     return result.data ?? [];
   }
 
-  async finance<T>(action: 'dashboard' | 'price' | 'post', parameters: object): Promise<T> {
+  async finance<T>(action: 'dashboard' | 'price' | 'post' | 'cancel' | 'overview' | 'negotiate' | 'approve' | 'reject', parameters: object): Promise<T> {
     if (!this.authorized()) throw new Error('Acesso restrito.');
     const client = await this.client();
     const result = await client.rpc(`booking_finance_${action}`, parameters);

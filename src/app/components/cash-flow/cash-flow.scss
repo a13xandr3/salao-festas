@@ -12,3 +12,31 @@ button { max-width: 100%; overflow-wrap: anywhere; }
 
 .finance-table { min-width: 44rem; }
 .finance-table th { white-space: nowrap; }
+
+.finance-help {
+  padding: .75rem 1rem;
+  border: 1px solid #b9b9b4;
+  border-radius: .75rem;
+  overflow-wrap: anywhere;
+}
+
+.finance-help summary {
+  display: block;
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.finance-help summary::-webkit-details-marker {
+  display: none;
+}
+
+.finance-rejection {
+  width: min(36rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid #b9b9b4;
+  border-radius: .75rem;
+  overflow-wrap: anywhere;
+}
+.finance-rejection::backdrop { background: rgb(0 0 0 / 50%); }
