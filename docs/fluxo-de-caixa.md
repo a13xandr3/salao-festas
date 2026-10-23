@@ -1,42 +1,53 @@
-# Financeiro no painel
+# Fluxo de caixa no painel
 
-A navegação **Financeiro** apresenta entradas, saídas, saldo inicial/final e contas a receber. Movimentações usam a data efetiva do dinheiro; contas a receber usam o mês de início do evento. O resumo considera todos os registros, independentemente da página exibida (50 registros por página).
+O financeiro possui três abas: **Pré-Reservas/Reservas**, **Definir valor contratado** e **Registrar despesas**. Cada aba oferece uma explicação recolhível pelo indicador `->`.
 
-## Operação
+## Pré-Reservas/Reservas
 
-- **Recebimento:** informar protocolo, valor efetivamente recebido, data, categoria, descrição e identificador único do Pix/comprovante. Pode ser parcial. A reserva só fica `confirmed` quando o líquido recebido atinge o total contratado.
-- **Despesa:** registrar data, valor, categoria (limpeza, manutenção, água, energia, fornecedores, outros) e descrição. O protocolo é opcional para despesas gerais.
-- **Devolução:** informar protocolo e valor efetivamente devolvido. O banco limita a devolução ao líquido recebido. Uma devolução de reserva ativa reabre seu saldo pendente; uma cancelada permanece cancelada.
-- **Saldo/ajuste:** entrada ou saída documentada para implantação/conciliação do caixa. Não altera o pagamento de uma reserva. Para corrigir o recebimento de uma reserva, usar a movimentação oposta vinculada ao mesmo protocolo e identificar o lançamento original na descrição/referência.
-- **Valor contratado:** obrigatório para reservas antigas sem preço. Informar a diária realmente combinada. O banco calcula diárias × preço e preserva o valor. Uma repetição do mesmo valor é segura; uma tentativa de trocar um valor já definido é recusada.
+Consulte o mês de início do evento. A lista apresenta cliente/protocolo, início, recebido líquido (recebimentos menos devoluções), status do pagamento e ações. Sem pagamento: **Pendente**; pagamento incompleto: **Parcial**; pagamento integral: **Total**. A reserva aprovada recebe `status=confirmed` no banco.
 
-O registro é administrativo: não movimenta dinheiro no banco, não consulta automaticamente o Pix nem dispara e-mail de cobrança. Conferir o extrato/comprovante antes de lançar.
+- **Aprovar:** abre o cadastro manual de recebimento. Informe o valor deste pagamento, a data efetiva e o identificador único do Pix/comprovante; clique em **Registrar pagamento**. Não existe integração bancária ou webhook do Pix. Exemplo: locação de R$800 e pagamento informado de R$300 deixam R$500 pendentes; o status fica Parcial. Um novo lançamento manual de R$500 quita a locação e altera a reserva para `confirmed`. O servidor recusa valores acima do saldo pendente, datas futuras e comprovantes duplicados. Reenvios da mesma intenção não duplicam o lançamento.
+- **Reprovar:** exige motivo e conferência do extrato. Com saldo recebido, exige registrar a devolução integral já efetuada no banco. Atualiza o status para `cancelled`, libera as datas, interrompe notificações pendentes e preserva o histórico em **Cancelados**. Não executa transferência bancária.
 
-## Valores e histórico
+Os registros são filtrados no servidor antes da contagem e paginação, em páginas de 50. O resumo considera todos os registros do período, independentemente da página.
 
-Novas reservas recebem automaticamente `stayDays`, `dailyRate` e `totalAmount` por trigger, usando inicialmente **R$ 400,00**, a tarifa atual do Pix. Alterações futuras em `booking_private.finance_control.daily_rate` não recalculam reservas já criadas. Se a tarifa pública mudar, também atualizar o gerador/QR Codes do Pix antes de publicar; não há edição de tarifa global nesta tela.
+## Definir valor contratado
 
-Reservas anteriores à migração permanecem sem preço até conciliação manual. `paymentConfirmedAt` ou `status=confirmed` antigos não provam valor nem data do movimento: a implantação não inventa recebimentos. A tela sinaliza reservas sem preço e confirmações sem recebimento integral no caixa.
+Permite definir ou alterar a **diária negociada** enquanto a pré-reserva está pendente, sem pagamentos ou devoluções registrados e sem confirmação. Informe protocolo, diária e motivo. O total é quantidade de diárias × diária negociada. Exemplo: duas diárias de R$350 resultam em R$700. O histórico privado preserva preço anterior, novo preço, motivo, autor e data. Repetir o mesmo preço não duplica o histórico.
 
-Ao implantar, escolher uma data de corte. O saldo inicial deve representar o dinheiro anterior aos lançamentos importados. Não incluir o mesmo recebimento no saldo de abertura e novamente nas movimentações. Os registros anteriores podem ser lançados com sua data real, após conferir extratos.
+Novas reservas continuam capturando a tarifa padrão em `booking_private.finance_control` (R$400 na implantação). Uma alteração dessa tarifa não modifica reservas existentes. A negociação não altera o QR Code ou valor padrão do Pix já enviado ao cliente; informe o acordo ao cliente antes do pagamento. Não há ajuste de preço depois do recebimento por esta interface.
 
-Cancelamentos removem a previsão de receita e preservam recebimentos e despesas. Uma eventual devolução é outra movimentação. Reservas com lançamentos não podem ser apagadas fisicamente por causa do vínculo; o cancelamento já existente é por atualização de status.
+## Registrar despesas
+
+Informe categoria, valor pago, data e descrição. Categorias: limpeza, manutenção, água, energia, fornecedores e outros insumos/utensílios. Exemplo: cloro para piscina, Limpeza, R$80. O lançamento é sempre uma despesa, sem protocolo ou controles de recebimento. Reenvios da mesma intenção usam a mesma chave para evitar duplicidade. A interface não controla estoque.
+
+## Exemplo completo
+
+1. Cliente escolhe duas diárias no calendário e envia a pré-reserva: R$800 previstos, zero recebido e status Pendente.
+2. Se houver desconto, defina R$350 por diária e o motivo: total negociado R$700, ainda sem entrada no caixa.
+3. Confira o pagamento no banco; na lista ativa, clique **Aprovar**, informe valor pago de R$700, data e comprovante e clique **Registrar pagamento**. O caixa recebe o valor informado, pagamento Total e reserva `confirmed`. Se informar apenas R$300, haverá baixa parcial e permanecerão R$400 pendentes.
+4. Registre R$80 de cloro em **Registrar despesas**. Com saldo inicial zero, sem outros lançamentos e ambos no mesmo mês, o resumo mostra R$700 de entradas, R$80 de saídas e saldo final R$620.
+5. Se outro cliente desistir, use **Reprovar**, informe o motivo e confira o extrato. Caso exista saldo recebido, efetue a devolução no banco e informe os dados na janela. Após confirmar, consulte o registro em **Cancelados**.
+
+Entradas e saídas seguem o mês efetivo do dinheiro; contas a receber seguem o mês de início do evento. Aprovar registra uma conferência administrativa; o painel não consulta o banco nem transfere dinheiro.
 
 ## Banco e segurança
 
-Aplicar `supabase/migrations/202610220003_cash_flow.sql` depois das migrações existentes. Ela preserva dados anteriores e não cria lançamentos financeiros.
+Aplicar as migrações em ordem, incluindo `202610220003_cash_flow.sql`, `202610230001_finance_cancel.sql` e `202610230002_simple_finance.sql` e `202610230003_manual_payment.sql`. A última acrescenta:
 
-- `public.financial_transactions`: histórico com valores `numeric(12,2)`, autor obtido de `auth.uid()`, chave de idempotência e referência do comprovante. Usuários autenticados não têm INSERT/UPDATE/DELETE diretos.
-- `public.finance_receivables` e `public.finance_cash_flow`: views `security_invoker=true`, obedecendo ao RLS das tabelas de origem.
-- `booking_finance_dashboard`: agregação mensal e paginação independentes de movimentações e reservas.
-- `booking_finance_price`: definição explícita do preço legado.
-- `booking_finance_post`: validação, serialização por lock, idempotência, lançamento e atualização do pagamento na mesma transação.
-- `booking_confirm_payment`: a função administrativa anterior também registra o saldo integral como recebimento de hoje, em uma única transação, sem duplicação em chamadas repetidas. Para registrar data real e identificador bancário, preferir a tela Financeiro.
+- `booking_finance_overview`: resumo e lista de reservas ativas, sem o histórico de movimentações na resposta.
+- `booking_finance_negotiate`: negociação de preço com auditoria e bloqueio após pagamento.
+- `booking_finance_approve(uuid,text,text,text,uuid)`: recebimento manual com valor, data, comprovante e chave de idempotência. A assinatura antiga sem valor está desativada.
+- View `pre_reservas_canceladas`, caso ainda não exista, com segurança do usuário que faz a consulta.
 
-Todas as RPCs exigem usuário na allowlist e sessão `aal2`. O frontend usa a mesma sessão em memória já validada, sem service_role. Duas tentativas com a mesma chave retornam o lançamento existente; a mesma referência de recebimento não pode produzir dois créditos. Mudanças no formulário representam uma nova intenção e recebem outra chave.
+As RPCs exigem administrador na allowlist com AAL2. O lock financeiro serializa negociação, aprovação, remoção e recebimentos. Valores inválidos e operações incompatíveis com o estado atual são recusados no servidor. O histórico financeiro continua preservado no banco, embora a aba Movimentações tenha sido retirada.
 
-Valores inválidos, recebimentos acima do saldo contratado, devoluções acima do saldo recebido, datas futuras, protocolos inexistentes e campos extras são recusados no servidor. Ajustes não apagam nem editam lançamentos existentes.
+## Reprovação com motivo e devolução
 
-## Validação
+A ação **Reprovar**, à direita de Aprovar, abre uma janela com motivo obrigatório (até 500 caracteres). Sem recebimento líquido registrado, exige conferir o extrato e declarar que não existe valor pendente de devolução. Se houver recebimento, a janela mostra o saldo líquido integral a devolver e exige data, identificador do comprovante e confirmação de que a devolução já foi realizada no banco.
 
-Testes Jest cobrem interface, permissões do cliente, validações, reenvio, paginação, estados e bloqueio da navegação durante gravações. Testes PostgreSQL locais cobrem dinheiro exato, RLS/AAL2, preço histórico, recebimentos parciais/integral, devoluções, cancelamento, idempotência, referência duplicada e reaplicação da migração. O teste de navegador usa PostgreSQL local, sem registrar dinheiro nem enviar mensagens no Supabase real.
+A RPC `booking_finance_reject` registra a devolução e o cancelamento em uma única transação, preservando o histórico. Se o saldo mudou desde a abertura da janela, recusa a operação e solicita nova conferência. Reenvios da mesma operação não duplicam devoluções. Não há transferência bancária automática nem devolução parcial neste fluxo.
+
+A migração `202610230004_reject_reservation.sql` acrescenta à tabela `preReservations`: `rejectionReason` (text), `rejectedAt` (timestamptz), `rejectedBy` (uuid), `rejectionRefundAmount` (numeric), `rejectionRefundDate` (date), `rejectionRefundReference` (text), `rejectionKey` (uuid) e `rejectionChecked` (boolean). A view Cancelados passa a incluir motivo, data e dados da devolução; o painel exibe motivo, data da reprovação e valor devolvido.
+
+Reservas antigas podem estar confirmadas sem recebimentos no caixa. A interface identifica esse caso como **Sem recebimento registrado**, mantendo a informação de confirmação. A reprovação exige conferência explícita do extrato, sem criar recebimentos ou devoluções fictícios. A migração não altera o status nem os pagamentos de clientes existentes.
