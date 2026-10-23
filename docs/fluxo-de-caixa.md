@@ -54,7 +54,7 @@ Reservas antigas podem estar confirmadas sem recebimentos no caixa. A interface 
 
 ## Aba Cancelados
 
-O relatório fica no cash-flow, sem link próprio no cabeçalho do painel. A consulta preserva a view protegida do Supabase e os até 100 registros mais recentes, independentemente do período financeiro. Mostra nome/protocolo, contato, período, status, motivo, data da reprovação, devolução registrada e data de criação. Ao abrir a aba, a lista é consultada novamente; **Atualizar lista** permite repetir a consulta sem sair da aba.
+O relatório fica no cash-flow, sem link próprio no cabeçalho do painel. A consulta preserva a view protegida do Supabase e os até 100 registros mais recentes cujo início do evento pertence ao mês selecionado no período financeiro. Mostra nome/protocolo, contato, período, status, motivo, data da reprovação, devolução registrada e data de criação. Ao abrir a aba, a lista é consultada novamente; **Consultar** aplica o mês escolhido e **Atualizar lista** repete a consulta para esse mês sem sair da aba. O filtro é aplicado no Supabase antes do limite de 100 registros.
 
 ## Aba Despesas
 
