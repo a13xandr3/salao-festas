@@ -1,7 +1,7 @@
 import '@angular/common/locales/global/pt';
 import { ChangeDetectionStrategy, Component, ElementRef, inject, input, OnInit, output, signal, viewChild } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminAuth, AdminListRow } from '../../services/admin-auth';
 import { FinanceDashboard, FinanceReservation } from '../../services/finance.models';
 
@@ -13,7 +13,8 @@ interface ExpenseReport {
 type FinanceOverview = Pick<FinanceDashboard, 'summary' | 'reservations' | 'reservationCount'>;
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const money = /^(?!0+(?:[.,]0{1,2})?$)\d{1,8}(?:[.,]\d{1,2})?$/;
+const money = /^(?!0+(?:[.,]0{1,2})?$)(?:\d{1,8}|\d{1,2}(?:\.\d{3}){1,2})(?:[.,]\d{1,2})?$/;
+const moneyValue = (value: string): string => value.includes(',') ? value.replace(/\./g, '').replace(',', '.') : value;
 export function financeError(error: unknown): string {
   const details = error as { code?: string; message?: string } | null;
   if (['PT400', 'PT404', 'PT409'].includes(details?.code ?? '') && details?.message) return details.message;
@@ -79,6 +80,23 @@ export class CashFlow implements OnInit {
   private pending?: { fingerprint: string; key: string };
 
   ngOnInit(): void { void this.refresh(); }
+
+  protected maskMoney(event: Event, control: FormControl<string>): void {
+    const input = event.target as HTMLInputElement;
+    const digitsAfterCaret = input.value.slice(input.selectionStart ?? input.value.length).replace(/\D/g, '').length;
+    const digits = input.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 10);
+    const padded = digits.padStart(3, '0');
+    const formatted = digits ? padded.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + padded.slice(-2) : '';
+    control.setValue(formatted);
+    input.value = formatted;
+    let caret = formatted.length;
+    let remaining = digitsAfterCaret;
+    while (caret > 0 && remaining > 0) {
+      caret--;
+      if (/\d/.test(formatted[caret])) remaining--;
+    }
+    input.setSelectionRange(caret, caret);
+  }
 
   protected async refresh(): Promise<void> {
     this.period.markAllAsTouched();
@@ -147,7 +165,7 @@ export class CashFlow implements OnInit {
     this.entry.markAllAsTouched();
     if (this.entry.invalid || this.saving() || this.loading() || this.disabled()) return;
     const values = this.entry.getRawValue();
-    const request = { ...values, kind: 'expense', amount: values.amount.replace(',', '.'), description: values.description.trim() };
+    const request = { ...values, kind: 'expense', amount: moneyValue(values.amount), description: values.description.trim() };
     const fingerprint = JSON.stringify(request);
     if (this.pending?.fingerprint !== fingerprint) this.pending = { fingerprint, key: crypto.randomUUID() };
     if (await this.write('post', { p_input: { ...request, key: this.pending!.key } })) {
@@ -160,7 +178,7 @@ export class CashFlow implements OnInit {
     this.price.markAllAsTouched();
     if (this.price.invalid || this.saving() || this.loading() || this.disabled()) return;
     const values = this.price.getRawValue();
-    if (await this.write('negotiate', { p_id: values.reservationId, p_daily_rate: values.dailyRate.replace(',', '.'), p_reason: values.reason.trim() })) {
+    if (await this.write('negotiate', { p_id: values.reservationId, p_daily_rate: moneyValue(values.dailyRate), p_reason: values.reason.trim() })) {
       this.price.reset(); this.tab.set('reservations');
       await this.refresh(); this.notice.set('Valor negociado registrado.');
     }
@@ -210,7 +228,7 @@ export class CashFlow implements OnInit {
     this.payment.markAllAsTouched();
     if (this.payment.invalid) return;
     const values = this.payment.getRawValue();
-    const request = { p_id: selected.row.reservationId, p_amount: values.amount.replace(',', '.'), p_occurred_on: values.occurredOn, p_reference: values.reference.trim() };
+    const request = { p_id: selected.row.reservationId, p_amount: moneyValue(values.amount), p_occurred_on: values.occurredOn, p_reference: values.reference.trim() };
     const fingerprint = JSON.stringify(request);
     if (this.receiptPending?.fingerprint !== fingerprint) this.receiptPending = { fingerprint, key: crypto.randomUUID() };
     const parameters = { ...request, p_key: this.receiptPending!.key };

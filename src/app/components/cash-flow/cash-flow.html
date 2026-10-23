@@ -48,7 +48,7 @@
             <p><strong>{{ selected.row.name }}</strong> · {{ selected.row.reservationId }}</p>
               <p>Saldo pendente: <strong>{{ selected.row.amountDue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>. Informe somente o valor deste pagamento, após conferir o pagamento no banco.</p>
               <div [formGroup]="payment" class="row g-3 mb-3">
-                <div class="col-12 col-md-6"><label for="finance-payment-amount" class="form-label">Valor pago (R$)</label><input id="finance-payment-amount" class="form-control" formControlName="amount" inputmode="decimal" placeholder="0,00" required [readOnly]="saving()"></div>
+                <div class="col-12 col-md-6"><label for="finance-payment-amount" class="form-label">Valor pago (R$)</label><input id="finance-payment-amount" (input)="maskMoney($event, payment.controls.amount)" class="form-control" formControlName="amount" inputmode="decimal" placeholder="0,00" required [readOnly]="saving()"></div>
                 <div class="col-12 col-md-6"><label for="finance-payment-date" class="form-label">Data do pagamento</label><input id="finance-payment-date" type="date" class="form-control" formControlName="occurredOn" [max]="today" required [readOnly]="saving()"></div>
                 <div class="col-12"><label for="finance-payment-reference" class="form-label">Identificador do Pix/comprovante</label><input id="finance-payment-reference" class="form-control" formControlName="reference" maxlength="120" required [readOnly]="saving()"></div>
               </div>
@@ -159,7 +159,7 @@
         <form class="finance-form mb-4" [formGroup]="price" (ngSubmit)="submitPrice()">
           <h3 class="h5">Definir valor contratado</h3>
           <label for="finance-price-id" class="form-label">Protocolo da pré-reserva</label><input id="finance-price-id" class="form-control mb-3" formControlName="reservationId" maxlength="36" required [readOnly]="saving()">
-          <label for="finance-daily-rate" class="form-label">Diária negociada (R$)</label><input id="finance-daily-rate" class="form-control mb-3" inputmode="decimal" formControlName="dailyRate" required [readOnly]="saving()">
+          <label for="finance-daily-rate" class="form-label">Diária negociada (R$)</label><input id="finance-daily-rate" (input)="maskMoney($event, price.controls.dailyRate)" class="form-control mb-3" inputmode="decimal" formControlName="dailyRate" required [readOnly]="saving()">
           <label for="finance-price-reason" class="form-label">Motivo da negociação</label><input id="finance-price-reason" class="form-control" formControlName="reason" maxlength="500" required [readOnly]="saving()">
           @if (price.touched && price.invalid) { <p class="text-danger mt-3" role="alert">Informe protocolo válido, diária positiva com até duas casas decimais e motivo da negociação.</p> }
           <div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-dark" [disabled]="saving() || loading() || disabled()">Salvar valor contratado</button><button type="button" class="btn btn-outline-dark" (click)="selectTab('reservations')" [disabled]="saving()">Voltar</button></div>
@@ -174,7 +174,7 @@
           <h3 class="h5">Registrar despesas</h3>
           <div class="row g-3">
             <div class="col-12 col-md-6"><label for="finance-category" class="form-label">Categoria</label><select id="finance-category" class="form-select" formControlName="category" [attr.disabled]="saving() ? '' : null"><option value="limpeza">Limpeza</option><option value="manutencao">Manutenção</option><option value="agua">Água</option><option value="energia">Energia</option><option value="fornecedores">Fornecedores</option><option value="outros">Outros insumos e utensílios</option></select></div>
-            <div class="col-12 col-md-6"><label for="finance-amount" class="form-label">Valor pago (R$)</label><input id="finance-amount" class="form-control" inputmode="decimal" formControlName="amount" required [readOnly]="saving()"></div>
+            <div class="col-12 col-md-6"><label for="finance-amount" class="form-label">Valor pago (R$)</label><input id="finance-amount" (input)="maskMoney($event, entry.controls.amount)" class="form-control" inputmode="decimal" formControlName="amount" required [readOnly]="saving()"></div>
             <div class="col-12 col-md-6"><label for="finance-date" class="form-label">Data do pagamento</label><input id="finance-date" class="form-control" type="date" formControlName="occurredOn" [max]="today" required [readOnly]="saving()"></div>
             <div class="col-12"><label for="finance-description" class="form-label">Descrição da despesa</label><input id="finance-description" class="form-control" formControlName="description" maxlength="500" required [readOnly]="saving()"></div>
           </div>

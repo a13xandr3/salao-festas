@@ -28,6 +28,29 @@ describe('CashFlow', () => {
   function price(component: CashFlow) {
     component['price'].setValue({ reservationId: id, dailyRate: '350,00', reason: ' Desconto combinado ' });
   }
+  it('masks money while typing, accepts pasted amounts and sends numeric values', async () => {
+    const {component, auth, fixture, element} = await setup();
+    for (const [tab, selector, control] of [
+      ['entry', '#finance-amount', component['entry'].controls.amount],
+      ['price', '#finance-daily-rate', component['price'].controls.dailyRate],
+      ['reservations', '#finance-payment-amount', component['payment'].controls.amount],
+    ] as const) {
+      await component['selectTab'](tab);
+      if (tab === 'reservations') component['openPayment'](reservation);
+      fixture.detectChanges();
+      const input = element.querySelector<HTMLInputElement>(selector)!;
+      for (const [typed, expected] of [['1','0,01'],['12','0,12'],['123','1,23'],['R$ 1.234,56','1.234,56'],['abc',''],['',''],['0','0,00']]) {
+        input.value = typed; input.dispatchEvent(new Event('input', {bubbles:true})); fixture.detectChanges();
+        expect(input.value).toBe(expected); expect(control.value).toBe(expected);
+      }
+      expect(control.invalid).toBe(true);
+    }
+    await component['selectTab']('entry'); fixture.detectChanges(); expense(component);
+    const input = element.querySelector<HTMLInputElement>('#finance-amount')!;
+    input.value = '123456'; input.dispatchEvent(new Event('input', {bubbles:true}));
+    await component['submitEntry']();
+    expect(auth.finance).toHaveBeenCalledWith('post', {p_input:expect.objectContaining({amount:'1234.56'})});
+  });
   it('only exposes intentionally friendly server errors', () => {
     for (const code of ['PT400','PT404','PT409']) expect(financeError({code, message:'Confira os dados'})).toBe('Confira os dados');
     for (const error of [null, undefined, {}, {code:'PT404'}, {code:'42P01', message:'sql'}]) expect(financeError(error)).toContain('Não foi possível');
