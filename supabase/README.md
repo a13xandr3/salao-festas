@@ -118,3 +118,7 @@ para `cancelled` (inativo), em vez de excluí-lo. O período fica livre porque a
 de sobreposição consideram apenas `pending_payment` e `confirmed`. Envios ainda não concluídos
 são cancelados; o histórico de e-mails já enviados é preservado. O protocolo e o token individual
 continuam obrigatórios. Esta migração não recupera registros excluídos anteriormente.
+
+## Manutenção técnica
+
+Consulte [Expurgo de dados técnicos](../docs/expurgo-tecnico.md) para retenção automática de logs de tarefas, controles expirados e anexos residuais, com preservação dos dados de negócio e das chaves de deduplicação de e-mails.
