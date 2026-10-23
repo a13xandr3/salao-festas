@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { CashFlow } from '../cash-flow/cash-flow';
 import { DatePipe } from '@angular/common';
 import { AdminAuth, AdminList, AdminListRow } from '../../services/admin-auth';
 
@@ -7,7 +8,7 @@ import { AdminAuth, AdminList, AdminListRow } from '../../services/admin-auth';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './painel.html',
   styleUrl: './painel.scss',
-  imports: [DatePipe],
+  imports: [DatePipe, CashFlow],
 })
 export class Painel {
   protected readonly auth = inject(AdminAuth);
@@ -28,10 +29,20 @@ export class Painel {
   protected readonly selectedList = signal<AdminList | null>(null);
   protected readonly rows = signal<AdminListRow[]>([]);
   protected readonly loading = signal(false);
+  protected readonly financeOpen = signal(false);
+  protected readonly financeBusy = signal(false);
   protected readonly error = signal('');
 
+  protected openFinance(): void {
+    if (this.busy() || this.loading() || this.financeBusy() || !this.auth.authorized()) return;
+    this.selectedList.set(null);
+    this.error.set('');
+    this.financeOpen.set(true);
+  }
+
   protected async load(type: AdminList): Promise<void> {
-    if (this.busy() || this.loading() || !this.auth.authorized()) return;
+    if (this.busy() || this.loading() || this.financeBusy() || !this.auth.authorized()) return;
+    this.financeOpen.set(false);
     this.selectedList.set(type);
     this.rows.set([]);
     this.error.set('');

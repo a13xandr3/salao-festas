@@ -102,6 +102,15 @@ export class AdminAuth {
     return result.data ?? [];
   }
 
+  async finance<T>(action: 'dashboard' | 'price' | 'post', parameters: object): Promise<T> {
+    if (!this.authorized()) throw new Error('Acesso restrito.');
+    const client = await this.client();
+    const result = await client.rpc(`booking_finance_${action}`, parameters);
+    if (result.error) throw result.error;
+    if (result.data === null) throw new Error('Resposta financeira indisponível.');
+    return result.data as T;
+  }
+
   async signOut(): Promise<void> {
     this.clear();
     const client = await this.client();

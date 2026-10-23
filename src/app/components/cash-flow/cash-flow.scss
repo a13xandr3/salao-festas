@@ -1,0 +1,14 @@
+:host { display: block; min-width: 0; }
+.finance-card { height: 100%; padding: 1rem; border: 1px solid #b9b9b4; border-radius: .75rem; background: #fff; overflow-wrap: anywhere; }
+.finance-card span, .finance-card strong { display: block; }
+.finance-card strong { margin-top: .5rem; font-size: clamp(1.1rem, 2vw, 1.5rem); }
+.finance-form { padding: clamp(.75rem, 2vw, 1.5rem); border: 1px solid #b9b9b4; border-radius: .75rem; background: #fff; }
+input, select, button { min-height: 44px; }
+small { overflow-wrap: anywhere; }
+.table-responsive { max-width: 100%; }
+
+.finance-period, .finance-period > div { min-width: 0; max-width: 100%; }
+button { max-width: 100%; overflow-wrap: anywhere; }
+
+.finance-table { min-width: 44rem; }
+.finance-table th { white-space: nowrap; }

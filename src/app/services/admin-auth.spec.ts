@@ -144,6 +144,15 @@ describe('AdminAuth', () => {
     query.overrideTypes.mockResolvedValue(ok(null)); expect(await service.list(type)).toEqual([]);
     query.overrideTypes.mockResolvedValue(failure()); await expect(service.list(type)).rejects.toThrow();
   });
+  it('protects financial RPCs with the same AAL2 session and propagates failures', async () => {
+    await expect(service.finance('dashboard', { p_month: '2026-10' })).rejects.toThrow('Acesso restrito');
+    await signIn(); await service.verify('123456');
+    client.rpc.mockResolvedValue(ok({ summary: {} }));
+    expect(await service.finance('dashboard', { p_month: '2026-10' })).toEqual({ summary: {} });
+    expect(client.rpc).toHaveBeenLastCalledWith('booking_finance_dashboard', { p_month: '2026-10' });
+    client.rpc.mockResolvedValue(failure()); await expect(service.finance('post', {})).rejects.toThrow();
+    client.rpc.mockResolvedValue(ok(null)); await expect(service.finance('price', {})).rejects.toThrow('Resposta financeira indisponível');
+  });
   it('hides the panel even if server sign-out fails', async () => {
     await signIn(); await service.verify('123456');
     client.auth.signOut.mockResolvedValue(failure());

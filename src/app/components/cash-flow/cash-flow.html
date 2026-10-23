@@ -1,0 +1,81 @@
+<section aria-labelledby="finance-title" [attr.aria-busy]="loading() || saving()">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <h2 id="finance-title" class="h4 m-0">Financeiro · Fluxo de caixa</h2>
+    <form class="finance-period d-flex flex-wrap align-items-end gap-2" [formGroup]="period" (ngSubmit)="applyPeriod()">
+      <div><label for="finance-month" class="form-label">Período</label><input id="finance-month" type="month" class="form-control" formControlName="month" required [readOnly]="loading() || saving() || disabled()"></div>
+      <button class="btn btn-outline-dark" [disabled]="loading() || saving() || disabled()">Consultar</button>
+    </form>
+  </div>
+  @if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
+  @if (notice()) { <p class="alert alert-success" role="status">{{ notice() }}</p> }
+  @if (loading()) { <p role="status">Consultando o financeiro…</p> }
+  @if (snapshot(); as data) {
+    <div class="row g-3 mb-3" aria-label="Resumo financeiro">
+      <div class="col-12 col-sm-6 col-xl-3"><div class="finance-card"><span>Entradas</span><strong>{{ data.summary.income | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div></div>
+      <div class="col-12 col-sm-6 col-xl-3"><div class="finance-card"><span>Saídas</span><strong>{{ data.summary.expenses | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div></div>
+      <div class="col-12 col-sm-6 col-xl-3"><div class="finance-card"><span>Saldo final</span><strong>{{ data.summary.closingBalance | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div></div>
+      <div class="col-12 col-sm-6 col-xl-3"><div class="finance-card"><span>A receber · eventos do período</span><strong>{{ data.summary.amountDue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div></div>
+    </div>
+    <p>Saldo inicial: <strong>{{ data.summary.openingBalance | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>. Entradas e saídas seguem a data efetiva do dinheiro. O saldo a receber considera reservas com início no mês consultado.</p>
+    @if (data.summary.unpricedCount) { <p class="alert alert-warning" role="status">{{ data.summary.unpricedCount }} reserva(s) sem valor contratado. O total a receber está incompleto até definir esses valores.</p> }
+    @if (data.summary.unreconciledCount) { <p class="alert alert-warning" role="status">{{ data.summary.unreconciledCount }} reserva(s) confirmada(s) sem recebimento integral registrado no caixa. Confira os comprovantes antes de lançar.</p> }
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <button type="button" class="btn btn-dark" (click)="edit('entry')" [disabled]="loading() || saving() || disabled()">Registrar movimentação</button>
+      <button type="button" class="btn btn-outline-dark" (click)="edit('price')" [disabled]="loading() || saving() || disabled()">Definir valor contratado</button>
+    </div>
+    @if (editing() === 'entry') {
+      <form id="finance-entry" class="finance-form mb-4" [formGroup]="entry" (ngSubmit)="submitEntry()">
+        <h3 class="h5">Registrar movimentação</h3>
+        <p>Recebimentos só devem ser registrados após conferir o dinheiro no banco. O pagamento integral confirma a reserva; pagamentos parciais permanecem pendentes.</p>
+        <div class="row g-3">
+          <div class="col-12 col-md-6"><label for="finance-kind" class="form-label">Tipo</label><select id="finance-kind" class="form-select" formControlName="kind" [attr.disabled]="saving() ? '' : null"><option value="receipt">Recebimento de reserva</option><option value="expense">Despesa</option><option value="refund">Devolução</option><option value="opening_in">Saldo/ajuste de entrada</option><option value="opening_out">Saldo/ajuste de saída</option></select></div>
+          <div class="col-12 col-md-6"><label for="finance-date" class="form-label">Data efetiva</label><input id="finance-date" class="form-control" type="date" formControlName="occurredOn" [max]="today" required [readOnly]="saving()"></div>
+          <div class="col-12 col-md-6"><label for="finance-amount" class="form-label">Valor (R$)</label><input id="finance-amount" class="form-control" inputmode="decimal" formControlName="amount" placeholder="400,00" required [readOnly]="saving()"><small>Até duas casas decimais, sem separador de milhar.</small></div>
+          <div class="col-12 col-md-6"><label for="finance-reservation" class="form-label">Protocolo da pré-reserva</label><input id="finance-reservation" class="form-control" formControlName="reservationId" maxlength="36" [readOnly]="saving()"><small>Obrigatório para recebimento e devolução; opcional para despesas.</small></div>
+          <div class="col-12"><label for="finance-reference" class="form-label">Identificador do Pix/comprovante</label><input id="finance-reference" class="form-control" formControlName="reference" maxlength="120" [readOnly]="saving()"><small>Obrigatório e único para recebimentos, para evitar registro duplicado.</small></div>
+          <div class="col-12 col-md-6"><label for="finance-category" class="form-label">Categoria</label><select id="finance-category" class="form-select" formControlName="category" [attr.disabled]="saving() ? '' : null"><option value="locacao">Locação</option><option value="limpeza">Limpeza</option><option value="manutencao">Manutenção</option><option value="agua">Água</option><option value="energia">Energia</option><option value="fornecedores">Fornecedores</option><option value="devolucao">Devolução</option><option value="ajuste">Ajuste de saldo</option><option value="outros">Outros</option></select></div>
+          <div class="col-12"><label for="finance-description" class="form-label">Descrição</label><input id="finance-description" class="form-control" formControlName="description" maxlength="500" required [readOnly]="saving()"></div>
+        </div>
+        @if (entry.touched && entry.invalid) { <p class="text-danger mt-3" role="alert">Confira valor, data, descrição e protocolo. Recebimentos exigem o identificador do comprovante.</p> }
+        <div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-dark" [disabled]="saving() || loading() || disabled()">{{ saving() ? 'Registrando…' : 'Registrar no caixa' }}</button><button type="button" class="btn btn-outline-dark" (click)="editing.set(null)" [disabled]="saving()">Cancelar</button></div>
+      </form>
+    }
+    @if (editing() === 'price') {
+      <form class="finance-form mb-4" [formGroup]="price" (ngSubmit)="submitPrice()">
+        <h3 class="h5">Definir valor contratado</h3>
+        <p>Use o preço realmente combinado para reservas antigas. O total será calculado pelas diárias da reserva e ficará preservado.</p>
+        <label for="finance-price-id" class="form-label">Protocolo da pré-reserva</label><input id="finance-price-id" class="form-control mb-3" formControlName="reservationId" maxlength="36" required [readOnly]="saving()">
+        <label for="finance-daily-rate" class="form-label">Diária combinada (R$)</label><input id="finance-daily-rate" class="form-control" inputmode="decimal" formControlName="dailyRate" required [readOnly]="saving()">
+        @if (price.touched && price.invalid) { <p class="text-danger mt-3" role="alert">Informe um protocolo válido e uma diária positiva com até duas casas decimais.</p> }
+        <div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-dark" [disabled]="saving() || loading() || disabled()">Salvar valor contratado</button><button type="button" class="btn btn-outline-dark" (click)="editing.set(null)" [disabled]="saving()">Cancelar</button></div>
+      </form>
+    }
+    <nav class="d-flex flex-wrap gap-2 mb-3" aria-label="Visões do financeiro">
+      <button type="button" class="btn btn-outline-dark" [attr.aria-pressed]="tab() === 'transactions'" (click)="tab.set('transactions')">Movimentações ({{ data.transactionCount }})</button>
+      <button type="button" class="btn btn-outline-dark" [attr.aria-pressed]="tab() === 'reservations'" (click)="tab.set('reservations')">Reservas e recebimentos ({{ data.reservationCount }})</button>
+    </nav>
+    @if (tab() === 'transactions') {
+      @if (!data.transactions.length) { <p>Nenhuma movimentação neste mês.</p> }
+      @else {
+        <div class="table-responsive" tabindex="0" role="region" aria-label="Movimentações do caixa"><table class="table finance-table align-middle"><thead><tr><th>Data</th><th>Tipo</th><th>Pré-reserva</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>
+          @for (row of data.transactions; track row.id) { <tr><td class="text-nowrap">{{ row.occurredOn | date:'dd/MM/yyyy':'UTC' }}</td><td class="text-nowrap">{{ labels[row.kind] }}</td><td class="text-break">{{ row.name }}<br>{{ row.reservationId }}</td><td class="text-break">{{ row.description }}<br><small>{{ categoryLabels[row.category] }} · {{ row.externalReference }}</small><br><small>Registrado por: {{ row.createdBy }}</small></td><td class="text-nowrap">{{ row.signedAmount | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td></tr> }
+        </tbody></table></div>
+      }
+      <div class="d-flex flex-wrap align-items-center gap-2"><button type="button" class="btn btn-outline-dark" [disabled]="!page() || loading() || saving()" (click)="changePage('transactions', -1)">Anterior</button><span>Página {{ page() + 1 }}</span><button type="button" class="btn btn-outline-dark" [disabled]="(page() + 1) * 50 >= data.transactionCount || loading() || saving()" (click)="changePage('transactions', 1)">Próxima</button></div>
+    } @else {
+      @if (!data.reservations.length) { <p>Nenhuma reserva com início neste mês.</p> }
+      @else {
+        <div class="table-responsive" tabindex="0" role="region" aria-label="Recebimentos por reserva"><table class="table finance-table align-middle"><thead><tr><th>Pré-reserva</th><th>Início</th><th>Contratado</th><th>Recebido / devolvido</th><th>A receber</th><th>Ações</th></tr></thead><tbody>
+          @for (row of data.reservations; track row.reservationId) {
+            <tr><td class="text-break">{{ row.name }}<br><small>{{ row.reservationId }}</small>@if (row.status === 'cancelled') { <br><strong>Cancelada</strong> }</td><td class="text-nowrap">{{ row.startDate | date:'dd/MM/yyyy':'UTC' }}</td>
+              <td>@if (row.totalAmount === null) { Não definido } @else { {{ row.totalAmount | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}<br><small>{{ row.stayDays }} diária(s)</small> }</td>
+              <td>{{ row.received | currency:'BRL':'symbol':'1.2-2':'pt-BR' }} / {{ row.refunded | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td><td>{{ row.amountDue | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+              <td><div class="d-flex flex-wrap gap-2">@if (row.totalAmount === null) { <button type="button" class="btn btn-sm btn-outline-dark" (click)="prepare(row, 'price')" [disabled]="loading() || saving()">Definir valor</button> } @else { @if (row.amountDue > 0) { <button type="button" class="btn btn-sm btn-outline-dark" (click)="prepare(row, 'receipt')" [disabled]="loading() || saving()">Receber</button> } @if (row.refundableAmount > 0) { <button type="button" class="btn btn-sm btn-outline-dark" (click)="prepare(row, 'refund')" [disabled]="loading() || saving()">Devolver</button> } }</div></td>
+            </tr>
+          }
+        </tbody></table></div>
+      }
+      <div class="d-flex flex-wrap align-items-center gap-2"><button type="button" class="btn btn-outline-dark" [disabled]="!reservationPage() || loading() || saving()" (click)="changePage('reservations', -1)">Anterior</button><span>Página {{ reservationPage() + 1 }}</span><button type="button" class="btn btn-outline-dark" [disabled]="(reservationPage() + 1) * 50 >= data.reservationCount || loading() || saving()" (click)="changePage('reservations', 1)">Próxima</button></div>
+    }
+  }
+</section>

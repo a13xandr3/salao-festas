@@ -1,4 +1,5 @@
 import { signal } from '@angular/core';
+import { DeferBlockState } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { AdminAuth } from '../../services/admin-auth';
 import { Painel } from './painel';
@@ -24,7 +25,7 @@ describe('Painel', () => {
   });
   function setup() {
     const authorized = signal(true);
-    const auth = { authorized, email: () => 'admin@example.com', list: jest.fn().mockResolvedValue([]) };
+    const auth = { authorized, email: () => 'admin@example.com', list: jest.fn().mockResolvedValue([]), finance: jest.fn().mockRejectedValue(new Error('offline')) };
     TestBed.configureTestingModule({ imports: [Painel], providers: [{ provide: AdminAuth, useValue: auth }] });
     const fixture = TestBed.createComponent(Painel); fixture.detectChanges();
     return { fixture, auth, component: fixture.componentInstance, element: fixture.nativeElement as HTMLElement };
@@ -32,7 +33,7 @@ describe('Painel', () => {
   it('navigates to contacts and pre-reservations without reloading the authenticated page', async () => {
     const { fixture, auth, element } = setup();
     const links = element.querySelectorAll<HTMLAnchorElement>('nav a');
-    expect(Array.from(links, link => link.textContent)).toEqual(['Contatos', 'Pré-reservas', 'Cancelados']);
+    expect(Array.from(links, link => link.textContent)).toEqual(['Contatos', 'Pré-reservas', 'Cancelados', 'Financeiro']);
     expect(auth.list).not.toHaveBeenCalled();
     expect(element.querySelector('.panel-empty')!.textContent).toContain('Aqui será exibido o resultado');
     expect(element.querySelector('.panel-footer')!.textContent).toContain('Desenvolvido por Alexandre Esteves Alves');
@@ -52,6 +53,22 @@ describe('Painel', () => {
     expect(element.querySelector('#lista-pre-reservas')).not.toBeNull(); expect(element.querySelector('#lista-contatos')).toBeNull();
     expect(element.querySelector('tbody')!.textContent).toContain('25/10/2026 a 26/10/2026');
     expect(element.querySelector('tbody')!.textContent).toContain('Aguardando pagamento');
+  });
+  it('opens the financial view and prevents leaving it during a financial write', async () => {
+    const { fixture, auth, component, element } = setup();
+    auth.authorized.set(false); component['openFinance'](); expect(component['financeOpen']()).toBe(false);
+    auth.authorized.set(true); fixture.componentRef.setInput('busy', true); component['openFinance'](); expect(component['financeOpen']()).toBe(false);
+    fixture.componentRef.setInput('busy', false); component['loading'].set(true); component['openFinance'](); expect(component['financeOpen']()).toBe(false);
+    component['loading'].set(false);
+    element.querySelector<HTMLAnchorElement>('a[href="#financeiro"]')!.click(); fixture.detectChanges();
+    for (const block of await fixture.getDeferBlocks()) await block.render(DeferBlockState.Complete);
+    await fixture.whenStable(); fixture.detectChanges();
+    expect(element.querySelector('app-cash-flow')).not.toBeNull();
+    component['financeBusy'].set(true); fixture.detectChanges();
+    expect(element.querySelector<HTMLButtonElement>('.panel-logout')!.disabled).toBe(true);
+    component['openFinance'](); await component['load']('contacts'); expect(auth.list).not.toHaveBeenCalled();
+    component['financeBusy'].set(false); await component['load']('contacts'); fixture.detectChanges();
+    expect(element.querySelector('app-cash-flow')).toBeNull();
   });
   it('loads cancelled reservations from the Supabase view in the central area', async () => {
     const { fixture, auth, element } = setup();
