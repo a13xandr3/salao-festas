@@ -1,13 +1,13 @@
 # Fluxo de caixa no painel
 
-O financeiro possui três abas: **Pré-Reservas/Reservas**, **Definir valor contratado** e **Registrar despesas**. Cada aba oferece uma explicação recolhível pelo indicador `->`.
+O financeiro possui cinco abas: **Pré-Reservas/Reservas**, **Definir valor contratado**, **Registrar despesas**, **Despesas** e **Cancelados**. Cada aba oferece uma explicação recolhível pelo indicador `->`.
 
 ## Pré-Reservas/Reservas
 
 Consulte o mês de início do evento. A lista apresenta cliente/protocolo, início, recebido líquido (recebimentos menos devoluções), status do pagamento e ações. Sem pagamento: **Pendente**; pagamento incompleto: **Parcial**; pagamento integral: **Total**. A reserva aprovada recebe `status=confirmed` no banco.
 
 - **Aprovar:** abre o cadastro manual de recebimento. Informe o valor deste pagamento, a data efetiva e o identificador único do Pix/comprovante; clique em **Registrar pagamento**. Não existe integração bancária ou webhook do Pix. Exemplo: locação de R$800 e pagamento informado de R$300 deixam R$500 pendentes; o status fica Parcial. Um novo lançamento manual de R$500 quita a locação e altera a reserva para `confirmed`. O servidor recusa valores acima do saldo pendente, datas futuras e comprovantes duplicados. Reenvios da mesma intenção não duplicam o lançamento.
-- **Reprovar:** exige motivo e conferência do extrato. Com saldo recebido, exige registrar a devolução integral já efetuada no banco. Atualiza o status para `cancelled`, libera as datas, interrompe notificações pendentes e preserva o histórico em **Cancelados**. Não executa transferência bancária.
+- **Reprovar:** exige motivo e conferência do extrato. Com saldo recebido, exige registrar a devolução integral já efetuada no banco. Atualiza o status para `cancelled`, libera as datas, interrompe notificações pendentes e preserva o histórico na aba **Cancelados** do próprio financeiro. Não executa transferência bancária.
 
 Os registros são filtrados no servidor antes da contagem e paginação, em páginas de 50. O resumo considera todos os registros do período, independentemente da página.
 
@@ -51,3 +51,14 @@ A RPC `booking_finance_reject` registra a devolução e o cancelamento em uma ú
 A migração `202610230004_reject_reservation.sql` acrescenta à tabela `preReservations`: `rejectionReason` (text), `rejectedAt` (timestamptz), `rejectedBy` (uuid), `rejectionRefundAmount` (numeric), `rejectionRefundDate` (date), `rejectionRefundReference` (text), `rejectionKey` (uuid) e `rejectionChecked` (boolean). A view Cancelados passa a incluir motivo, data e dados da devolução; o painel exibe motivo, data da reprovação e valor devolvido.
 
 Reservas antigas podem estar confirmadas sem recebimentos no caixa. A interface identifica esse caso como **Sem recebimento registrado**, mantendo a informação de confirmação. A reprovação exige conferência explícita do extrato, sem criar recebimentos ou devoluções fictícios. A migração não altera o status nem os pagamentos de clientes existentes.
+
+## Aba Cancelados
+
+O relatório fica no cash-flow, sem link próprio no cabeçalho do painel. A consulta preserva a view protegida do Supabase e os até 100 registros mais recentes, independentemente do período financeiro. Mostra nome/protocolo, contato, período, status, motivo, data da reprovação, devolução registrada e data de criação. Ao abrir a aba, a lista é consultada novamente; **Atualizar lista** permite repetir a consulta sem sair da aba.
+
+## Aba Despesas
+
+Selecione o mês e clique em **Consultar**. O relatório mostra **Data**, **Despesas** (descrição) e **Valor**, usando a data do pagamento. Acima da tabela, à direita, aparece o total de todas as despesas do mês, incluindo as demais páginas. A RPC `booking_finance_expenses` retorna registros de tipo `expense`, em páginas de 50; devoluções a clientes e ajustes de saldo não entram neste relatório. A migração `202610230005_expense_report.sql` mantém a exigência de administrador com AAL2.
+
+
+Se a aba Despesas retornar `PGRST202`, a função não está disponível no schema cache do Supabase. Execute o conteúdo de `supabase/migrations/202610230005_expense_report.sql` no SQL Editor do projeto, após as migrações anteriores. O arquivo também solicita a atualização do cache do PostgREST. Essa falha é diferente de acesso negado (`PT403`/`42501`), que exige conferir a conta administradora e o segundo fator. A navegação entre abas permanece disponível se o resumo financeiro falhar.
