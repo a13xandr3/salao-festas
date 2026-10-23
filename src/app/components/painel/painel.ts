@@ -3,6 +3,8 @@ import { CashFlow } from '../cash-flow/cash-flow';
 import { DatePipe } from '@angular/common';
 import { AdminAuth, AdminList, AdminListRow } from '../../services/admin-auth';
 
+type PanelList = Exclude<AdminList, 'pre_reservas_canceladas'>;
+
 @Component({
   selector: 'app-painel',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -13,20 +15,18 @@ import { AdminAuth, AdminList, AdminListRow } from '../../services/admin-auth';
 export class Painel {
   protected readonly auth = inject(AdminAuth);
   protected readonly year = new Date().getFullYear();
-  protected readonly listTitles: Record<AdminList, string> = {
+  protected readonly listTitles: Record<PanelList, string> = {
     contacts: 'Lista de contatos',
     preReservations: 'Lista de pré-reservas',
-    pre_reservas_canceladas: 'Cancelados',
   };
-  protected readonly listIds: Record<AdminList, string> = {
+  protected readonly listIds: Record<PanelList, string> = {
     contacts: 'lista-contatos',
     preReservations: 'lista-pre-reservas',
-    pre_reservas_canceladas: 'lista-cancelados',
   };
   protected readonly statusLabels: Record<string, string> = { pending_payment: 'Aguardando pagamento', confirmed: 'Reservado', cancelled: 'Cancelado' };
   readonly busy = input(false);
   readonly signOut = output<void>();
-  protected readonly selectedList = signal<AdminList | null>(null);
+  protected readonly selectedList = signal<PanelList | null>(null);
   protected readonly rows = signal<AdminListRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly financeOpen = signal(false);
@@ -40,7 +40,7 @@ export class Painel {
     this.financeOpen.set(true);
   }
 
-  protected async load(type: AdminList): Promise<void> {
+  protected async load(type: PanelList): Promise<void> {
     if (this.busy() || this.loading() || this.financeBusy() || !this.auth.authorized()) return;
     this.financeOpen.set(false);
     this.selectedList.set(type);

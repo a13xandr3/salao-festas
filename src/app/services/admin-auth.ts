@@ -104,7 +104,7 @@ export class AdminAuth {
     return result.data ?? [];
   }
 
-  async finance<T>(action: 'dashboard' | 'price' | 'post' | 'cancel' | 'overview' | 'negotiate' | 'approve' | 'reject', parameters: object): Promise<T> {
+  async finance<T>(action: 'dashboard' | 'price' | 'post' | 'cancel' | 'overview' | 'negotiate' | 'approve' | 'reject' | 'expenses', parameters: object): Promise<T> {
     if (!this.authorized()) throw new Error('Acesso restrito.');
     const client = await this.client();
     const result = await client.rpc(`booking_finance_${action}`, parameters);

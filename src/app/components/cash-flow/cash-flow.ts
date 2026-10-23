@@ -2,8 +2,13 @@ import '@angular/common/locales/global/pt';
 import { ChangeDetectionStrategy, Component, ElementRef, inject, input, OnInit, output, signal, viewChild } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AdminAuth } from '../../services/admin-auth';
+import { AdminAuth, AdminListRow } from '../../services/admin-auth';
 import { FinanceDashboard, FinanceReservation } from '../../services/finance.models';
+
+interface ExpenseReport {
+  month: string; total: number; count: number;
+  entries: { id: string; occurredOn: string; description: string; amount: number }[];
+}
 
 type FinanceOverview = Pick<FinanceDashboard, 'summary' | 'reservations' | 'reservationCount'>;
 
@@ -41,12 +46,17 @@ export class CashFlow implements OnInit {
     checked: [false, Validators.requiredTrue],
   });
   private rejectionPending?: { fingerprint: string; key: string };
+  protected readonly cancelled = signal<AdminListRow[] | null>(null);
+  protected readonly expenses = signal<ExpenseReport | null>(null);
+  protected readonly expensePage = signal(0);
   protected readonly reservationPage = signal(0);
-  protected readonly tab = signal<'entry' | 'price' | 'reservations'>('reservations');
+  protected readonly tab = signal<'entry' | 'price' | 'reservations' | 'cancelled' | 'expenses'>('reservations');
   protected readonly tabs = [
     { id: 'reservations', label: 'Pré-Reservas/Reservas' },
     { id: 'price', label: 'Definir valor contratado' },
     { id: 'entry', label: 'Registrar despesas' },
+    { id: 'expenses', label: 'Despesas' },
+    { id: 'cancelled', label: 'Cancelados' },
   ] as const;
   protected readonly period = this.fb.nonNullable.group({ month: [this.today.slice(0, 7), [Validators.required, Validators.pattern(/^\d{4}-(0[1-9]|1[0-2])$/)]] });
   protected readonly entry = this.fb.nonNullable.group({
@@ -73,6 +83,7 @@ export class CashFlow implements OnInit {
   protected async refresh(): Promise<void> {
     this.period.markAllAsTouched();
     if (this.period.invalid || this.loading() || this.saving() || this.disabled()) return;
+    if (this.tab() === 'expenses') { await this.refreshExpenses(); return; }
     this.loading.set(true); this.error.set('');
     try {
       this.snapshot.set(await this.auth.finance<FinanceOverview>('overview', {
@@ -84,7 +95,7 @@ export class CashFlow implements OnInit {
   }
 
   protected async applyPeriod(): Promise<void> {
-    this.reservationPage.set(0); this.confirmation.set(null); await this.refresh();
+    this.expensePage.set(0); this.reservationPage.set(0); this.confirmation.set(null); await this.refresh();
   }
 
   protected async changePage(delta: number): Promise<void> {
@@ -93,9 +104,43 @@ export class CashFlow implements OnInit {
     this.confirmation.set(null); await this.refresh();
   }
 
-  protected selectTab(type: 'entry' | 'price' | 'reservations'): void {
+  protected async selectTab(type: 'entry' | 'price' | 'reservations' | 'cancelled' | 'expenses'): Promise<void> {
     if (this.loading() || this.saving() || this.disabled()) return;
     this.notice.set(''); this.error.set(''); this.confirmation.set(null); this.tab.set(type);
+    if (type === 'cancelled') await this.refreshCancelled();
+    if (type === 'expenses') await this.refreshExpenses();
+  }
+
+  protected async refreshCancelled(): Promise<void> {
+    if (this.loading() || this.saving() || this.disabled()) return;
+    this.loading.set(true); this.error.set(''); this.cancelled.set(null);
+    try { this.cancelled.set(await this.auth.list('pre_reservas_canceladas')); }
+    catch { this.error.set('Não foi possível carregar os cancelados. Tente novamente.'); }
+    finally { this.loading.set(false); }
+  }
+
+  protected async refreshExpenses(): Promise<void> {
+    this.period.markAllAsTouched();
+    if (this.period.invalid || this.loading() || this.saving() || this.disabled()) return;
+    this.loading.set(true); this.error.set(''); this.expenses.set(null);
+    try {
+      this.expenses.set(await this.auth.finance<ExpenseReport>('expenses', {
+        p_month: this.period.controls.month.value, p_page: this.expensePage(),
+      }));
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      this.error.set(code === 'PGRST202'
+        ? 'O relatório de despesas ainda não está disponível no banco. Aplique a migração 202610230005_expense_report.sql no Supabase.'
+        : code === 'PT403' || code === '42501'
+          ? 'Sem permissão para consultar despesas. Entre novamente com uma conta administradora e confirme o segundo fator.'
+          : financeError(error));
+    }
+    finally { this.loading.set(false); }
+  }
+
+  protected async changeExpensePage(delta: number): Promise<void> {
+    if (this.loading() || this.saving() || this.disabled()) return;
+    this.expensePage.update(value => Math.max(0, value + delta)); await this.refreshExpenses();
   }
 
   protected async submitEntry(): Promise<void> {

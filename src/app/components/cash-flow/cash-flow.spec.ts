@@ -15,7 +15,7 @@ function dashboard(): FinanceDashboard {
 }
 describe('CashFlow', () => {
   async function setup(response = dashboard()) {
-    const auth = { finance: jest.fn().mockImplementation((action: string) => Promise.resolve(action === 'overview' ? response : { id: 'saved' })) };
+    const auth = { list: jest.fn().mockResolvedValue([]), finance: jest.fn().mockImplementation((action: string) => Promise.resolve(action === 'overview' ? response : { id: 'saved' })) };
     TestBed.configureTestingModule({ imports: [CashFlow], providers: [{ provide: AdminAuth, useValue: auth }] });
     const fixture = TestBed.createComponent(CashFlow); fixture.detectChanges();
     const dialog=fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
@@ -32,10 +32,10 @@ describe('CashFlow', () => {
     for (const code of ['PT400','PT404','PT409']) expect(financeError({code, message:'Confira os dados'})).toBe('Confira os dados');
     for (const error of [null, undefined, {}, {code:'PT404'}, {code:'42P01', message:'sql'}]) expect(financeError(error)).toContain('Não foi possível');
   });
-  it('starts with three clear tabs and only the requested reservation columns', async () => {
+  it('starts with five clear tabs and only the requested reservation columns', async () => {
     const {component, auth, element, fixture} = await setup();
     expect(auth.finance).toHaveBeenCalledWith('overview', {p_month:component['today'].slice(0,7), p_reservation_page:0});
-    expect(Array.from(element.querySelectorAll('[role=tab]')).map(el=>el.textContent?.trim())).toEqual(['Pré-Reservas/Reservas','Definir valor contratado','Registrar despesas']);
+    expect(Array.from(element.querySelectorAll('[role=tab]')).map(el=>el.textContent?.trim())).toEqual(['Pré-Reservas/Reservas','Definir valor contratado','Registrar despesas','Despesas','Cancelados']);
     expect(Array.from(element.querySelectorAll('th')).map(el=>el.textContent)).toEqual(['Pré-reserva/Reserva','Início','Recebido','Status','Ações']);
     expect(element.textContent).toContain('Pendente'); expect(element.textContent).toContain('Parcial');
     expect(element.querySelector('img')).toBeNull(); expect(element.querySelector('.alert-warning')).toBeNull();
@@ -47,6 +47,85 @@ describe('CashFlow', () => {
     const reject=Array.from(element.querySelectorAll<HTMLButtonElement>('tbody button')).find(button=>button.textContent?.trim()==='Reprovar')!;
     expect(reject).toBeDefined();expect(reject.disabled).toBe(false);
     component['snapshot'].set({...response,reservations:[]}); fixture.detectChanges(); expect(element.textContent).toContain('Nenhuma pré-reserva');
+  });
+  it('shows monthly expenses and the server total above the table aligned to the right', async () => {
+    const {component,fixture,element,auth}=await setup();
+    const report={month:'2026-10',total:1000,count:60,entries:[{id:'expense-1',occurredOn:'2026-10-22',description:'Cloro para piscina',amount:80},{id:'expense-2',occurredOn:'2026-10-21',description:'Utensílios',amount:20}]};
+    auth.finance.mockResolvedValueOnce(report);
+    component['period'].controls.month.setValue('2026-10');
+    await component['selectTab']('expenses');fixture.detectChanges();
+    expect(auth.finance).toHaveBeenLastCalledWith('expenses',{p_month:'2026-10',p_page:0});
+    expect(Array.from(element.querySelectorAll('th')).map(el=>el.textContent?.trim())).toEqual(['Data','Despesas','Valor']);
+    const total=element.querySelector('p.text-end')!;expect(total.textContent).toContain('1.000,00');expect(total.textContent).toContain('10/2026');
+    expect(total.compareDocumentPosition(element.querySelector('table')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(element.querySelector('tbody')!.textContent).toContain('22/10/2026');expect(element.querySelector('tbody')!.textContent).toContain('Cloro para piscina');expect(element.querySelector('tbody')!.textContent).toContain('80,00');
+    auth.finance.mockResolvedValueOnce({...report,entries:[]});await component['changeExpensePage'](1);expect(component['expensePage']()).toBe(1);
+    expect(auth.finance).toHaveBeenLastCalledWith('expenses',{p_month:'2026-10',p_page:1});
+    component['period'].controls.month.setValue('2026-09');auth.finance.mockResolvedValueOnce({month:'2026-09',total:0,count:0,entries:[]});
+    const apply=jest.spyOn(component as any,'applyPeriod');element.querySelector('form')!.dispatchEvent(new Event('submit',{cancelable:true}));await apply.mock.results[0].value;fixture.detectChanges();
+    expect(component['expensePage']()).toBe(0);expect(element.textContent).toContain('Nenhuma despesa registrada');expect(element.querySelector('p.text-end')!.textContent).toContain('09/2026');
+    expect(auth.finance).toHaveBeenLastCalledWith('expenses',{p_month:'2026-09',p_page:0});
+  });
+  it('handles expense read failures, invalid periods and concurrent operations', async () => {
+    const {component,auth,fixture}=await setup();
+    component['period'].controls.month.setValue('bad');await component['refreshExpenses']();expect(auth.finance).toHaveBeenCalledTimes(1);
+    component['period'].controls.month.setValue('2026-10');
+    for(const lock of ['loading','saving'] as const){component[lock].set(true);await component['refreshExpenses']();await component['changeExpensePage'](1);component[lock].set(false);}
+    fixture.componentRef.setInput('disabled',true);await component['refreshExpenses']();await component['changeExpensePage'](1);fixture.componentRef.setInput('disabled',false);
+    expect(auth.finance).toHaveBeenCalledTimes(1);
+    auth.finance.mockRejectedValueOnce(new Error('network'));await component['selectTab']('expenses');expect(component['expenses']()).toBeNull();expect(component['error']()).toContain('Não foi possível');
+    auth.finance.mockResolvedValueOnce({month:'2026-10',total:0,count:0,entries:[]});await component['changeExpensePage'](-1);expect(component['expensePage']()).toBe(0);expect(component['error']()).toBe('');
+  });
+  it('keeps expenses accessible when the overview fails', async () => {
+    const {component, auth, fixture, element} = await setup();
+    auth.finance.mockRejectedValueOnce(new Error('overview unavailable'));
+    await component['refresh'](); fixture.detectChanges();
+    expect(component['snapshot']()).toBeNull();
+    const expensesTab = Array.from(element.querySelectorAll<HTMLButtonElement>('[role=tab]'))
+      .find(button => button.textContent?.trim() === 'Despesas')!;
+    expect(expensesTab).toBeDefined();
+    auth.finance.mockResolvedValueOnce({month:'2026-10',total:80,count:1,entries:[{id:'expense',occurredOn:'2026-10-22',description:'Cloro',amount:80}]});
+    expensesTab.click(); await fixture.whenStable(); fixture.detectChanges();
+    expect(element.querySelector('tbody')!.textContent).toContain('Cloro');
+  });
+  it('distinguishes a missing expense RPC from denied access', async () => {
+    const {component, auth, fixture, element} = await setup();
+    auth.finance.mockRejectedValueOnce({code:'PGRST202'});
+    await component['selectTab']('expenses'); fixture.detectChanges();
+    expect(element.querySelector('[role=alert]')!.textContent).toContain('202610230005_expense_report.sql');
+    expect(element.textContent).not.toContain('Nenhuma despesa registrada');
+    for (const code of ['PT403', '42501']) {
+      auth.finance.mockRejectedValueOnce({code});
+      await component['refreshExpenses']();
+      expect(component['error']()).toContain('Sem permissão');
+    }
+  });
+  it('loads cancelled bookings in its own tab and preserves rejection details', async () => {
+    const {component,fixture,element,auth}=await setup();
+    auth.list.mockResolvedValueOnce([{id:'cancelled-id',name:'Cliente cancelado',email:'cancel@example.com',phone:'11999999999',startDate:'2026-10-25',endDate:'2026-10-26',status:'cancelled',createdAt:'2026-10-22T15:00:00Z',rejectionReason:'Cliente desistiu',rejectedAt:'2026-10-23T15:00:00Z',rejectionRefundAmount:800}]);
+    const select=jest.spyOn(component as any,'selectTab');
+    Array.from(element.querySelectorAll<HTMLButtonElement>('[role=tab]')).find(button=>button.textContent?.trim()==='Cancelados')!.click();
+    await select.mock.results[0].value;fixture.detectChanges();
+    expect(auth.list).toHaveBeenCalledWith('pre_reservas_canceladas');
+    const report=element.querySelector('#lista-cancelados')!;
+    expect(report.textContent).toContain('Cliente cancelado');expect(report.textContent).toContain('Cliente desistiu');
+    expect(report.textContent).toContain('23/10/2026 12:00');expect(report.textContent).toContain('800,00');
+    expect(report.textContent).toContain('cancelled-id');expect(report.textContent).toContain('independentemente do período');
+    expect(element.querySelector('#finance-month')).toBeNull();expect(element.querySelector('[aria-label="Resumo financeiro"]')).toBeNull();
+    expect(report.querySelectorAll('tbody button')).toHaveLength(0);
+    component['selectTab']('reservations');fixture.detectChanges();expect(element.querySelector('#lista-cancelados')).toBeNull();
+    auth.list.mockResolvedValueOnce([]);await component['selectTab']('cancelled');fixture.detectChanges();
+    expect(element.textContent).toContain('Nenhum registro cancelado');
+  });
+  it('supports retrying cancelled reads and respects operation locks', async () => {
+    const {component,fixture,element,auth}=await setup();
+    auth.list.mockRejectedValueOnce(new Error('offline'));await component['selectTab']('cancelled');fixture.detectChanges();
+    expect(component['cancelled']()).toBeNull();expect(component['error']()).toContain('Não foi possível carregar os cancelados');
+    const refresh=jest.spyOn(component as any,'refreshCancelled');
+    Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find(button=>button.textContent?.trim()==='Atualizar lista')!.click();
+    await refresh.mock.results[0].value;expect(component['cancelled']()).toEqual([]);expect(component['error']()).toBe('');
+    for(const lock of ['loading','saving'] as const){component[lock].set(true);await component['refreshCancelled']();component[lock].set(false);}
+    fixture.componentRef.setInput('disabled',true);await component['refreshCancelled']();expect(auth.list).toHaveBeenCalledTimes(2);
   });
   it('changes one tab at a time, preserves drafts and blocks navigation while busy', async () => {
     const {component, fixture, element}=await setup();

@@ -154,7 +154,7 @@ describe('AdminAuth', () => {
     client.rpc.mockResolvedValue(ok({ cancelled: true }));
     expect(await service.finance('cancel', { p_id: 'reservation-id' })).toEqual({ cancelled: true });
     expect(client.rpc).toHaveBeenLastCalledWith('booking_finance_cancel', { p_id: 'reservation-id' });
-    for (const action of ['overview', 'negotiate', 'approve', 'reject'] as const) {
+    for (const action of ['overview', 'negotiate', 'approve', 'reject', 'expenses'] as const) {
       client.rpc.mockResolvedValue(ok({ id: 'result' }));
       expect(await service.finance(action, {})).toEqual({ id: 'result' });
       expect(client.rpc).toHaveBeenLastCalledWith(`booking_finance_${action}`, {});

@@ -7,7 +7,6 @@
       <nav class="panel-nav" aria-label="Navegação do painel">
         <a href="#lista-contatos" [class.active]="selectedList() === 'contacts'" [attr.aria-current]="selectedList() === 'contacts' ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy()" (click)="$event.preventDefault(); load('contacts')">Contatos</a>
         <a href="#lista-pre-reservas" [class.active]="selectedList() === 'preReservations'" [attr.aria-current]="selectedList() === 'preReservations' ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy()" (click)="$event.preventDefault(); load('preReservations')">Pré-reservas</a>
-        <a href="#lista-cancelados" [class.active]="selectedList() === 'pre_reservas_canceladas'" [attr.aria-current]="selectedList() === 'pre_reservas_canceladas' ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy()" (click)="$event.preventDefault(); load('pre_reservas_canceladas')">Cancelados</a>
         <a href="#financeiro" [class.active]="financeOpen()" [attr.aria-current]="financeOpen() ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy()" (click)="$event.preventDefault(); openFinance()">Financeiro</a>
       </nav>
       <button type="button" class="panel-logout btn btn-outline-dark ms-auto" [disabled]="busy() || financeBusy()" (click)="signOut.emit()">Logout</button>
@@ -31,7 +30,6 @@
                   <thead><tr><th scope="col">Nome</th><th scope="col">Contato</th>
                     @if (list === 'contacts') { <th scope="col">Mensagem</th> }
                     @else { <th scope="col">Período</th><th scope="col">Status</th> }
-                    @if (list === 'pre_reservas_canceladas') { <th scope="col">Motivo da reprovação</th><th scope="col">Reprovada em</th><th scope="col">Devolução registrada (R$)</th> }
                     <th scope="col">Criado em</th>
                   </tr></thead>
                   <tbody>
@@ -41,7 +39,6 @@
                         <td class="text-break">{{ row.email }}<br>{{ row.phone }}</td>
                         @if (list === 'contacts') { <td class="text-break">{{ row.message }}</td> }
                         @else { <td>{{ row.startDate | date:'dd/MM/yyyy':'UTC' }} a {{ row.endDate | date:'dd/MM/yyyy':'UTC' }}</td><td class="text-break">{{ statusLabels[row.status || ''] || 'Não informado' }}</td> }
-                        @if (list === 'pre_reservas_canceladas') { <td class="text-break">{{ row.rejectionReason || 'Não informado' }}</td><td>{{ row.rejectedAt | date:'dd/MM/yyyy HH:mm':'-0300' }}</td><td>{{ row.rejectionRefundAmount }}</td> }
                         <td>{{ row.createdAt | date:'dd/MM/yyyy HH:mm':'-0300' }}</td>
                       </tr>
                     }
