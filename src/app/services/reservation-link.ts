@@ -1,3 +1,4 @@
+/** Lê UUID e token do link individual e retira esses parâmetros da barra de endereço. */
 export function reservationLink(
   document: Document,
   action: string,

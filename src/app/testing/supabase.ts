@@ -1,3 +1,4 @@
+/** Configurações e registros fictícios compartilhados pelos testes; não usa credenciais reais. */
 import { of } from 'rxjs';
 import { SiteConfig, SupabaseConfig } from '../services/site-config';
 
@@ -9,10 +10,12 @@ export const testConfig: SupabaseConfig = {
   contractUrl: `${testSite}documents/contrato.pdf`,
   pixUrl: `${testSite}pix.html`,
 };
+/** Fornece a configuração fictícia do Supabase aos testes Angular. */
 export const provideTestConfig = () => ({
   provide: SiteConfig,
   useValue: { config$: of(testConfig), base: testSite },
 });
+/** Monta a URL fictícia da RPC esperada pela requisição do teste. */
 export const rpcUrl = (name: string) => `${testSupabaseUrl}/rest/v1/rpc/${name}`;
 export const testReservation = {
   id: '00000000-0000-4000-8000-000000000001',

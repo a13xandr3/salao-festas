@@ -1,3 +1,4 @@
+/** Confere a renderização e o conteúdo da seção de celebrações. */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CelebrationArea } from './celebration-area';

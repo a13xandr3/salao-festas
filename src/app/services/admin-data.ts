@@ -2,7 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { AdminAuth } from './admin-auth';
 import { FinanceAction } from './finance.models';
 
+/** Listas administrativas que podem ser consultadas após autorização. */
 export type AdminList = 'contacts' | 'preReservations' | 'pre_reservas_canceladas';
+/** Campos permitidos para exibir contatos, reservas e cancelamentos. */
 export interface AdminListRow {
   id: string; name: string; email: string; phone: string; createdAt: string;
   rejectionReason?: string; rejectedAt?: string; rejectionRefundAmount?: number;
@@ -15,6 +17,7 @@ const listColumns: Record<AdminList, string> = {
   pre_reservas_canceladas: 'id,name,email,phone,startDate,endDate,status,createdAt,rejectionReason,rejectedAt,rejectionRefundAmount',
 };
 
+/** Valida o mês e calcula os limites de início e fim usados na consulta. */
 function monthBounds(month: string): [string, string] {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Período inválido.');
   const [year, number] = month.split('-').map(Number);
@@ -27,6 +30,7 @@ function monthBounds(month: string): [string, string] {
 export class AdminData {
   private readonly auth = inject(AdminAuth);
 
+  /** Consulta somente os campos permitidos da lista escolhida, com filtro mensal quando aplicável. */
   async list(type: AdminList, month?: string): Promise<AdminListRow[]> {
     return this.auth.runAuthorized(async client => {
       const query = client.from(type).select(listColumns[type]);
@@ -40,6 +44,7 @@ export class AdminData {
     });
   }
 
+  /** Executa a RPC financeira solicitada usando uma sessão administrativa autorizada. */
   async finance<T>(action: FinanceAction, parameters: object): Promise<T> {
     return this.auth.runAuthorized(async client => {
       const result = await client.rpc(`booking_finance_${action}`, parameters);

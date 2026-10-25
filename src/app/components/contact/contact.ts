@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SupabaseApi } from '../../services/supabase-api';
 
+/** Registra contatos, solicita os e-mails e apresenta avisos temporários. */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-contact',
@@ -45,31 +46,37 @@ export class Contact {
     message: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(2000)]],
   });
 
+  /** Remove o timer do aviso quando o componente é destruído. */
   constructor() {
     this.destroyRef.onDestroy(() => clearTimeout(this.snackbarTimer));
   }
 
+  /** Fecha o aviso e cancela seu timer de exibição. */
   protected dismissSuccess(): void {
     clearTimeout(this.snackbarTimer);
     this.feedback.set('');
     this.result.set('');
   }
 
+  /** Formata o telefone digitado e atualiza o campo do formulário. */
   protected maskPhone(event: Event): void {
     this.form.controls.phone.setValue(maskPhone(event.target as HTMLInputElement));
   }
 
+  /** Indica se o campo já foi tocado e contém um valor inválido. */
   protected invalid(field: keyof typeof this.form.controls): boolean {
     const control = this.form.controls[field];
     return control.invalid && control.touched;
   }
 
+  /** Solicita o e-mail do contato gravado, desde que o componente ainda esteja ativo. */
   private async sendRegistered(receipt: ContactReceipt): Promise<EmailResult | undefined> {
     if (this.destroyRef.destroyed) return undefined;
     return firstValueFrom(this.delivery.send({ kind: 'contact', id: receipt.id, token: receipt.deliveryToken })
       .pipe(takeUntilDestroyed(this.destroyRef)));
   }
 
+  /** Exibe a confirmação, limpa o formulário e agenda o fechamento do aviso. */
   private showSuccess(result: EmailResult | undefined): void {
     if (!result || this.destroyRef.destroyed) return;
     this.result.set('success');

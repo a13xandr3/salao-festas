@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminAuth } from '../../services/admin-auth';
 import { Painel } from '../painel/painel';
 
+/** Controla as etapas visuais de login, Authenticator e saída da área restrita. */
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +24,7 @@ export class Login {
     code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
   });
 
+  /** Valida e-mail e senha, inicia o login e limpa a senha após a tentativa. */
   protected async signIn(): Promise<void> {
     this.credentials.markAllAsTouched();
     if (this.credentials.invalid || this.busy()) return;
@@ -39,6 +41,7 @@ export class Login {
     }
   }
 
+  /** Confere o código TOTP e limpa o campo após a validação. */
   protected async verify(): Promise<void> {
     this.secondFactor.markAllAsTouched();
     if (this.secondFactor.invalid || this.busy()) return;
@@ -54,6 +57,7 @@ export class Login {
     }
   }
 
+  /** Encerra a sessão administrativa e limpa o código do segundo fator. */
   protected async signOut(): Promise<void> {
     if (this.busy()) return;
     this.busy.set(true);

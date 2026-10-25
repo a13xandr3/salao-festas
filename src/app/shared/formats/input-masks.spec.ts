@@ -1,5 +1,7 @@
+/** Testa máscaras de telefone e dinheiro, incluindo edição e posição do cursor. */
 import { maskMoney, maskPhone } from './input-masks';
 
+/** Cria um campo de entrada com valor e posição do cursor definidos para o teste. */
 function input(value: string, caret = value.length): HTMLInputElement {
   const element = document.createElement('input');
   element.value = value;

@@ -4,8 +4,10 @@ import { DatePipe } from '@angular/common';
 import { AdminAuth } from '../../services/admin-auth';
 import { AdminData, AdminList, AdminListRow } from '../../services/admin-data';
 
+/** Listas do painel; relatórios financeiros ficam nas abas do cash-flow. */
 type PanelList = Exclude<AdminList, 'pre_reservas_canceladas'>;
 
+/** Organiza a navegação administrativa e as consultas de contatos e reservas. */
 @Component({
   selector: 'app-painel',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +37,7 @@ export class Painel {
   protected readonly financeBusy = signal(false);
   protected readonly error = signal('');
 
+  /** Abre o financeiro quando a sessão está autorizada e não há operação em andamento. */
   protected openFinance(): void {
     if (this.busy() || this.loading() || this.financeBusy() || !this.auth.authorized()) return;
     this.selectedList.set(null);
@@ -42,6 +45,7 @@ export class Painel {
     this.financeOpen.set(true);
   }
 
+  /** Consulta a lista administrativa escolhida e apresenta os dados ou uma mensagem de erro. */
   protected async load(type: PanelList): Promise<void> {
     if (this.busy() || this.loading() || this.financeBusy() || !this.auth.authorized()) return;
     this.financeOpen.set(false);

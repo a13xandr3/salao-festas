@@ -1,3 +1,4 @@
+/** Testa autenticação, cadastro TOTP e autorização sem usar contas reais. */
 import { TestBed } from '@angular/core/testing';
 import { createClient } from '@supabase/supabase-js';
 import { of, throwError } from 'rxjs';
@@ -8,7 +9,9 @@ import { testConfig } from '../testing/supabase';
 jest.mock('@supabase/supabase-js', () => ({ createClient: jest.fn() }));
 
 describe('AdminAuth', () => {
+  /** Monta uma resposta de sucesso do SDK sem consultar o Supabase real. */
   const ok = (data: unknown = {}) => ({ data, error: null });
+  /** Monta uma resposta de falha do SDK para testar o tratamento de erros. */
   const failure = () => ({ data: null, error: new Error('private server detail') });
   let service: AdminAuth;
   let client: any;
@@ -33,6 +36,7 @@ describe('AdminAuth', () => {
     TestBed.configureTestingModule({ providers: [{ provide: SiteConfig, useValue: { config$: of(testConfig) } }] });
     service = TestBed.inject(AdminAuth);
   });
+  /** Inicia o login com credenciais fictícias usadas pelos testes. */
   const signIn = () => service.signIn(' admin@example.com ', 'a long test passphrase');
 
   it('keeps the session in memory and requires a fresh TOTP before granting access', async () => {

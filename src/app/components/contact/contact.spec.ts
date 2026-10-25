@@ -1,3 +1,4 @@
+/** Testa o contato, os e-mails simulados e o ciclo de vida dos avisos. */
 import { emailUrl, provideTestConfig, rpcUrl } from '../../testing/supabase';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -17,10 +18,12 @@ describe('Contact with Gmail', () => {
     jest.clearAllTimers();
     jest.useRealTimers();
   });
+  /** Cria o componente com dependências simuladas para o teste. */
   function setup() {
     const fixture = TestBed.createComponent(Contact);
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
+    /** Preenche os campos com dados de teste e atualiza a tela. */
     const fill = (message = 'Consulta de evento') => {
       for (const [id, value] of Object.entries({
         name: 'Maria Silva',
@@ -34,12 +37,14 @@ describe('Contact with Gmail', () => {
       }
       fixture.detectChanges();
     };
+    /** Dispara o envio do formulário no teste. */
     const submit = () => {
       element
         .querySelector('form')!
         .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
       fixture.detectChanges();
     };
+    /** Aguarda as tarefas assíncronas e atualiza a tela do teste. */
     const advance = async () => {
       for (let i = 0; i < 8; i++) await Promise.resolve();
       fixture.detectChanges();
@@ -145,6 +150,7 @@ describe('Contact with Gmail', () => {
     expect(input.selectionStart).toBe(7);
   });
 
+  /** Simula um contato gravado e seu e-mail aceito na fila. */
   async function queuedContact() {
     const context = setup();
     context.fill(); context.submit();

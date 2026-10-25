@@ -13,6 +13,7 @@ export function financeError(error: unknown): string {
   return 'Não foi possível concluir a operação financeira. Atualize e tente novamente.';
 }
 
+/** Traduz falhas do relatório de despesas sem expor detalhes internos do servidor. */
 export function expenseError(error: unknown): string {
   const code = (error as { code?: string } | null)?.code;
   if (code === 'PGRST202') return 'O relatório de despesas ainda não está disponível no banco. Aplique a migração 202610230005_expense_report.sql no Supabase.';
@@ -24,11 +25,13 @@ export function expenseError(error: unknown): string {
 export class RequestKey {
   private pending?: { fingerprint: string; key: string };
 
+  /** Reutiliza a chave do mesmo conteúdo e cria outra quando o lançamento muda. */
   forPayload(payload: object): string {
     const fingerprint = JSON.stringify(payload);
     if (this.pending?.fingerprint !== fingerprint) this.pending = { fingerprint, key: crypto.randomUUID() };
     return this.pending.key;
   }
 
+  /** Descarta a chave após o servidor confirmar o sucesso da operação. */
   clear(): void { this.pending = undefined; }
 }

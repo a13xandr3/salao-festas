@@ -1,10 +1,13 @@
+/** Testa consultas e RPCs administrativas com o cliente Supabase simulado. */
 import { TestBed } from '@angular/core/testing';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AdminAuth } from './admin-auth';
 import { AdminData } from './admin-data';
 
 describe('AdminData', () => {
+  /** Monta uma resposta de sucesso do SDK sem consultar o Supabase real. */
   const ok=(data:unknown={})=>({data,error:null});
+  /** Monta uma resposta de falha do SDK para testar o tratamento de erros. */
   const failure=()=>({data:null,error:new Error('private detail')});
   let service:AdminData;
   let client:{rpc:jest.Mock;from:jest.Mock};

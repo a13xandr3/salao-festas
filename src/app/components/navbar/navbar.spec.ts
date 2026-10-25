@@ -1,3 +1,4 @@
+/** Testa a abertura e o fechamento do menu de navegação. */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Navbar } from './navbar';

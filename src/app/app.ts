@@ -12,6 +12,7 @@ import { Contact } from './components/contact/contact';
 import { ReservationCalendar } from './components/reservation-calendar/reservation-calendar';
 import { Footer } from './components/footer/footer';
 
+/** Compõe o site público e alterna para a área restrita solicitada pela URL. */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
@@ -36,6 +37,7 @@ export class App {
   private readonly meta = inject(Meta);
   private readonly title = inject(Title);
 
+  /** Identifica a área restrita e ajusta título e indexação após a renderização. */
   constructor() {
     afterNextRender(() => {
       if (new URLSearchParams(this.document.location.search).get('area') === 'restrita') {

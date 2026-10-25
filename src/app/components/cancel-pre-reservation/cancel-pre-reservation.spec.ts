@@ -1,3 +1,4 @@
+/** Testa a confirmação de cancelamento e o tratamento do link individual. */
 import { provideTestConfig, rpcUrl } from '../../testing/supabase';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -51,6 +52,7 @@ describe('CancelPreReservation', () => {
     const element = fixture.nativeElement as HTMLElement;
     const cancelled = jest.fn(); fixture.componentInstance.cancelled.subscribe(cancelled);
     element.querySelector<HTMLInputElement>('#cancel-confirm')!.click();
+    /** Dispara o envio do formulário no teste. */
     const submit = () => element.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
     submit(); submit();
     const http = TestBed.inject(HttpTestingController);

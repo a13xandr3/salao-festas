@@ -1,3 +1,4 @@
+/** Confere o ano e a versão apresentados no rodapé. */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { version } from '../../../../package.json';

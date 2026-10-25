@@ -1,3 +1,4 @@
+/** Testa as requisições públicas ao Supabase usando respostas HTTP simuladas. */
 import { DOCUMENT } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -29,8 +30,10 @@ describe('Supabase integration on GitHub Pages', () => {
     backend = TestBed.inject(HttpTestingController);
   });
   afterEach(() => backend.verify());
+  /** Responde à consulta de configuração com os dados escolhidos pelo teste. */
   const configure = (value: SupabaseConfig = testConfig) =>
     backend.expectOne(`${testSite}app-config.json`).flush(value);
+  /** Obtém a requisição simulada da função do banco para conferir ou responder ao pedido. */
   const rpc = (name: string) => backend.expectOne(rpcUrl(name));
 
   it('calls RPC with apikey only, never a Pages API path or public-key bearer token', () => {

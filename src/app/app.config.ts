@@ -1,3 +1,4 @@
+/** Registra HTTP, rotas, hidratação e atualização zoneless da interface. */
 import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,

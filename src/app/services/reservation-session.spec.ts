@@ -1,3 +1,4 @@
+/** Testa recibos armazenados, dados inválidos e indisponibilidade da sessão do navegador. */
 import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { testReservation } from '../testing/supabase';

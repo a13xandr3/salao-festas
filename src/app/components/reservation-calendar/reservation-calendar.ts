@@ -18,6 +18,7 @@ import { PreReservation } from '../pre-reservation/pre-reservation';
 import { calendarDays, dateLabel, localNow } from './calendar-model';
 import { Availability } from '../../services/booking.models';
 
+/** Consulta a agenda e coordena os formulários ligados à data selecionada. */
 @Component({
   selector: 'app-reservation-calendar',
   imports: [PreReservation, CancelPreReservation, ContractUpload],
@@ -60,6 +61,7 @@ export class ReservationCalendar {
     return 'Disponibilidade não consultada. Atualize a agenda antes de reservar.';
   });
 
+  /** Inicia a consulta da agenda e sua atualização periódica após a renderização. */
   constructor() {
     afterNextRender(() => {
       this.linkAction.set(
@@ -73,17 +75,20 @@ export class ReservationCalendar {
         .subscribe(() => this.load());
     });
   }
+  /** Limpa o recibo da reserva cancelada e atualiza a disponibilidade. */
   protected onCancelled(id: string): void {
     this.preReservation()?.clearCancelledReceipt(id);
     this.load();
   }
 
+  /** Abre o formulário apenas quando a data selecionada está livre. */
   protected openReservation(): void {
     if (!this.selectedFree()) return;
     this.linkAction.set(false);
     this.preReservation()?.openForDate(this.selected());
   }
 
+  /** Muda o mês da agenda sem permitir navegação para meses anteriores ao atual. */
   protected changeMonth(direction: number): void {
     const [year, month] = this.month().split('-').map(Number);
     const next = new Date(Date.UTC(year, month - 1 + direction, 1)).toISOString().slice(0, 7);
@@ -92,10 +97,12 @@ export class ReservationCalendar {
     this.selected.set(next === this.now().date.slice(0, 7) ? this.now().date : `${next}-01`);
     this.load();
   }
+  /** Seleciona um dia e atualiza a referência de data e hora locais. */
   protected select(date: string): void {
     this.selected.set(date);
     this.now.set(localNow());
   }
+  /** Cancela a consulta anterior e busca a disponibilidade do mês exibido. */
   protected load(): void {
     this.request?.unsubscribe();
     this.now.set(localNow());

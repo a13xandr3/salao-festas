@@ -1,3 +1,4 @@
+/** Testa seleção de datas, consulta da agenda e abertura dos formulários. */
 import { EmailService } from '../../shared/email/email.service';
 import { throwError } from 'rxjs';
 import { provideTestConfig, rpcUrl, testReservation } from '../../testing/supabase';
@@ -21,11 +22,13 @@ describe('ReservationCalendar', () => {
     history.replaceState(null, '', '/');
     sessionStorage.clear();
   });
+  /** Cria o componente com dependências simuladas para o teste. */
   function setup() {
     const fixture = TestBed.createComponent(ReservationCalendar);
     fixture.detectChanges();
     const http = TestBed.inject(HttpTestingController);
     const element = fixture.nativeElement as HTMLElement;
+    /** Entrega a disponibilidade simulada e atualiza o calendário do teste. */
     const respond = (
       reservations: { date: string; start: string; end: string; pending?: boolean }[] = [],
       month = '2028-02',

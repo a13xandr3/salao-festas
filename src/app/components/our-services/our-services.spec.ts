@@ -1,3 +1,4 @@
+/** Confere a renderização da seção de serviços. */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { OurServices } from './our-services';

@@ -1,3 +1,4 @@
+/** Testa a leitura do link individual e a retirada do token da URL. */
 import { reservationLink } from './reservation-link';
 
 describe('reservationLink', () => {

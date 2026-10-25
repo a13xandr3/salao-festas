@@ -1,3 +1,4 @@
+/** Testa a configuração pública e a validação dos endereços de recursos. */
 import { DOCUMENT } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';

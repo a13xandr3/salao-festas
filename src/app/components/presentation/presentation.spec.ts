@@ -1,3 +1,4 @@
+/** Confere a apresentação inicial e seus links de navegação. */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Presentation } from './presentation';

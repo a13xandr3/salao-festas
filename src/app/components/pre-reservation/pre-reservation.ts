@@ -27,6 +27,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, Subscription, timeout } from 'rxjs';
 import { DateTime } from 'luxon';
 
+/** Valida datas futuras e exige pelo menos 24 horas no fuso de São Paulo. */
 export function reservationPeriod(control: AbstractControl): ValidationErrors | null {
   const { startDate, endDate } = control.value;
   const startTime = '08:00';
@@ -45,6 +46,7 @@ const reservationErrors: Record<number, string> = {
   429: 'Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.',
 };
 
+/** Converte o status HTTP em uma mensagem de erro adequada à pré-reserva. */
 function reservationError(status: number): string {
   return (
     reservationErrors[status] ??
@@ -52,6 +54,7 @@ function reservationError(status: number): string {
   );
 }
 
+/** Controla o formulário, o recibo e a solicitação de e-mail da pré-reserva. */
 @Component({
   selector: 'app-pre-reservation',
   imports: [ReactiveFormsModule],
@@ -103,6 +106,7 @@ export class PreReservation {
     { validators: reservationPeriod },
   );
 
+  /** Restaura o recibo do cliente e sincroniza o formulário com a data escolhida. */
   constructor() {
     afterNextRender(() => {
       const receipt = this.session.read();
@@ -121,6 +125,7 @@ export class PreReservation {
       }
     });
   }
+  /** Prepara uma nova solicitação para a data escolhida, preservando a reserva já enviada. */
   openForDate(date: string): void {
     if (this.sending()) return;
     const receipt = this.receipt();
@@ -140,6 +145,7 @@ export class PreReservation {
     this.formVisible.set(true);
   }
 
+  /** Descarta o recibo cancelado, interrompe sua notificação e oculta o formulário. */
   clearCancelledReceipt(id: string): void {
     if (this.receipt()?.id !== id) return;
     this.notification?.unsubscribe();
@@ -152,20 +158,24 @@ export class PreReservation {
     this.form.reset();
   }
 
+  /** Fecha o modal de sucesso quando ele está aberto. */
   protected closeSuccess(): void {
     const dialog = this.successDialog().nativeElement;
     if (!dialog.open) return;
     dialog.close();
   }
 
+  /** Formata o telefone digitado e atualiza o campo do formulário. */
   protected maskPhone(event: Event): void {
     this.form.controls.phone.setValue(maskPhone(event.target as HTMLInputElement));
   }
 
+  /** Indica se o campo já foi tocado e contém um valor inválido. */
   protected invalid(field: keyof typeof this.form.controls): boolean {
     const control = this.form.controls[field];
     return control.invalid && control.touched;
   }
+  /** Solicita o e-mail da reserva gravada e descarta recibos que o servidor considera inválidos. */
   private forward(receipt: ReservationReceipt): void {
     if (this.sending()) return;
     this.sending.set(true);
@@ -187,11 +197,13 @@ export class PreReservation {
       });
   }
 
+  /** Tenta novamente a notificação usando o recibo atual. */
   protected resumeNotification(): void {
     const receipt = this.receipt();
     if (receipt) this.forward(receipt);
   }
 
+  /** Valida e grava a pré-reserva; depois solicita o e-mail e mostra o modal de sucesso. */
   protected submit(): void {
     if (this.sending() || !this.formVisible()) return;
     this.attempted.set(true);

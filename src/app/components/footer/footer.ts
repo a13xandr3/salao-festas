@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { version } from '../../../../package.json';
 
+/** Exibe o rodapé com o ano atual e a versão do projeto. */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-footer',

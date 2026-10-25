@@ -1,3 +1,4 @@
+/** Testa a composição do site e a abertura da área restrita. */
 import { Meta, Title } from '@angular/platform-browser';
 import { DeferBlockState } from '@angular/core/testing';
 import { provideTestConfig, rpcUrl } from './testing/supabase';

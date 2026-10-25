@@ -1,3 +1,4 @@
+/** Testa a página Pix, os valores das diárias e os dados dos QR Codes. */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -6,6 +7,7 @@ const decodeQr = require('jsqr');
 const page = readFileSync(resolve(process.cwd(), 'public/pix.html'), 'utf8');
 const script = page.match(/<script>([\s\S]*?)<\/script>/)![1];
 
+/** Separa os campos do código Pix para conferir os dados do pagamento. */
 function fields(payload: string): Record<string, string> {
   const result: Record<string, string> = {};
   for (let offset = 0; offset < payload.length;) {
@@ -17,7 +19,7 @@ function fields(payload: string): Record<string, string> {
   return result;
 }
 
-// Independent polynomial division checks the BR Code checksum, including the 6304 marker.
+/** Calcula o CRC16 do código Pix de forma independente para validar seu conteúdo. */
 function checksum(payload: string): string {
   let register = 0xffff;
   for (const character of payload) {
@@ -47,6 +49,7 @@ describe('Pix payment page', () => {
     if (clipboard) Object.defineProperty(navigator, 'clipboard', clipboard);
     else Reflect.deleteProperty(navigator, 'clipboard');
   });
+  /** Escolhe a quantidade de diárias e dispara a atualização da página no teste. */
   function selectDays(days: number) {
     const select = document.querySelector<HTMLSelectElement>('#pix-days')!;
     select.value = String(days);

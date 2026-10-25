@@ -1,9 +1,11 @@
 import { Availability } from '../../services/booking.models';
 
+/** Data e hora no fuso utilizado pelo calendário. */
 interface LocalDateTime {
   date: string;
   time: string;
 }
+/** Estados visuais possíveis para um dia da agenda. */
 type DayStatus = 'free' | 'pre_reserved' | 'reserved' | 'unavailable' | 'unknown';
 const statusLabels: Record<DayStatus, string> = {
   free: 'Livre',
@@ -19,10 +21,12 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
 });
 
+/** Transforma a data em uma descrição legível em português. */
 export function dateLabel(date: string): string {
   return dateFormatter.format(new Date(`${date}T12:00:00Z`));
 }
 
+/** Obtém a data e a hora atuais no fuso de São Paulo. */
 export function localNow(date = new Date()): LocalDateTime {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Sao_Paulo',
@@ -33,6 +37,7 @@ export function localNow(date = new Date()): LocalDateTime {
     minute: '2-digit',
     hourCycle: 'h23',
   }).formatToParts(date);
+  /** Extrai uma parte da data formatada, como ano, mês ou hora. */
   const get = (key: string) => parts.find((part) => part.type === key)!.value;
   return {
     date: `${get('year')}-${get('month')}-${get('day')}`,
@@ -40,6 +45,7 @@ export function localNow(date = new Date()): LocalDateTime {
   };
 }
 
+/** Monta a grade do mês com espaços vazios para completar as semanas. */
 export function monthDays(month: string): (string | null)[] {
   const [year, number] = month.split('-').map(Number);
   const offset = new Date(Date.UTC(year, number - 1, 1)).getUTCDay();
@@ -50,6 +56,7 @@ export function monthDays(month: string): (string | null)[] {
   return days;
 }
 
+/** Combina disponibilidade e data atual para definir o estado e o texto de cada dia. */
 export function calendarDays(month: string, availability: Availability | null, now: LocalDateTime) {
   const states = new Map(availability?.days?.map((day) => [day.date, day.status]));
   return monthDays(month).map((date) => {

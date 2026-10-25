@@ -1,9 +1,10 @@
+/** Testa o runtime Deno com ambiente, credenciais e respostas de rede simulados. */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { ModuleKind, ScriptTarget, transpileModule } from 'typescript';
 
-/** Exercises the Deno boundary in a VM; no credentials or real requests are used. */
+/** Executa o runtime Deno em uma VM com ambiente, credenciais e rede simulados. */
 function runtime(env: Record<string, string>, response = { ok: true, status: 200, code: '' }, body?: unknown) {
   const source = readFileSync(resolve(process.cwd(), 'supabase/functions/_shared/runtime.ts'), 'utf8');
   const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS, target: ScriptTarget.ES2022 } });

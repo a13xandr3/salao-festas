@@ -1,3 +1,4 @@
+/** Testa a propriedade da reserva, a validação do PDF e o pedido de envio. */
 import { emailUrl, provideTestConfig, rpcUrl, testReservation } from '../../testing/supabase';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -57,6 +58,7 @@ describe('ContractUpload', () => {
     http.expectOne(rpcUrl('booking_owned_reservation')).flush(testReservation);
     expect(control.loaded()).toBe(true);
   });
+  /** Prepara um formulário de contrato com a propriedade da reserva confirmada. */
   function loaded() {
     history.replaceState(null, '', '/#enviar-contrato?id=my-id&token=' + 'a'.repeat(64));
     const fixture = TestBed.createComponent(ContractUpload); fixture.detectChanges();
@@ -64,11 +66,13 @@ describe('ContractUpload', () => {
     fixture.detectChanges();
     return { fixture, input: fixture.nativeElement.querySelector('input') as HTMLInputElement };
   }
+  /** Cria um arquivo PDF fictício e permite simular a leitura do seu cabeçalho. */
   function pdf(name = 'signed.pdf', header: () => Promise<string> = async () => '%PDF-') {
     const file = new File(['%PDF-test'], name);
     Object.defineProperty(file, 'slice', { value: () => ({ text: header }) });
     return file;
   }
+  /** Simula a escolha de arquivos pelo campo de upload. */
   function select(input: HTMLInputElement, files: File[] | null) {
     Object.defineProperty(input, 'files', { value: files, configurable: true });
     input.dispatchEvent(new Event('change'));
@@ -126,6 +130,7 @@ describe('ContractUpload', () => {
   });
   it('prevents duplicate sends, preserves the selected file on failure and retries', async () => {
     const { fixture, input } = loaded(); select(input, [pdf()]); await fixture.whenStable();
+    /** Dispara o envio do formulário no teste. */
     const submit = () => fixture.componentInstance['submit'](new Event('submit', { cancelable: true }));
     submit(); submit();
     const http = TestBed.inject(HttpTestingController);

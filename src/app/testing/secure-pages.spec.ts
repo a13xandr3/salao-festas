@@ -1,3 +1,4 @@
+/** Testa a política de segurança adicionada aos arquivos estáticos do build. */
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

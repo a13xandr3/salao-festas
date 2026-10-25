@@ -1,3 +1,4 @@
+/** Testa as etapas de credenciais, TOTP e saída da área restrita. */
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AdminAuth } from '../../services/admin-auth';
@@ -8,6 +9,7 @@ describe('Login', () => {
   const enrollment = signal<{ qrCode: string; secret: string } | null>(null);
   const authorized = signal(false);
   let auth: any;
+  /** Cria o componente com dependências simuladas para o teste. */
   const setup = () => {
     TestBed.configureTestingModule({ imports: [Login], providers: [{ provide: AdminAuth, useValue: auth }] });
     const fixture = TestBed.createComponent(Login); fixture.detectChanges();

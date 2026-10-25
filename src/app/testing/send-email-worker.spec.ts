@@ -1,3 +1,4 @@
+/** Testa a inicialização do worker com dependências de SMTP e banco simuladas. */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';

@@ -14,6 +14,7 @@ import { DOCUMENT } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, timeout } from 'rxjs';
+/** Confirma o cancelamento público por meio do link individual da reserva. */
 @Component({
   selector: 'app-cancel-pre-reservation',
   imports: [ReactiveFormsModule],
@@ -37,6 +38,7 @@ export class CancelPreReservation {
     token: ['', [Validators.required, Validators.pattern(/^[a-f0-9]{64}$/)]],
     confirm: [false, Validators.requiredTrue],
   });
+  /** Lê o link individual e prepara a confirmação do cancelamento. */
   constructor() {
     afterNextRender(() => {
       const link = reservationLink(this.document, 'cancelar-pre-reserva');
@@ -47,6 +49,7 @@ export class CancelPreReservation {
     });
   }
 
+  /** Valida a confirmação, solicita o cancelamento e libera o recibo local após sucesso. */
   protected submit(): void {
     if (this.sending()) return;
     this.form.markAllAsTouched();

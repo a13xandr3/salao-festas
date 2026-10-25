@@ -1,3 +1,4 @@
+/** Testa os cálculos de dias, estados de disponibilidade e fuso do calendário. */
 import { calendarDays, localNow, monthDays } from './calendar-model';
 describe('reservation calendar calculations', () => {
   it('uses São Paulo dates across the UTC day boundary', () => {

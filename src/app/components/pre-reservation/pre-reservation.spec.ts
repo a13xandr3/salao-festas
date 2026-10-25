@@ -1,3 +1,4 @@
+/** Testa criação, retomada e validação das pré-reservas sem acessar serviços reais. */
 import { provideTestConfig, rpcUrl, testReservation } from '../../testing/supabase';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -7,6 +8,7 @@ import { of, Subject, throwError } from 'rxjs';
 import { FormControl, FormGroup } from '@angular/forms';
 import { PreReservation, reservationPeriod } from './pre-reservation';
 
+/** Informa se o modal de sucesso está aberto no teste. */
 const dialogIsOpen = (element: HTMLElement) =>
   element.querySelector('dialog')!.hasAttribute('open');
 
@@ -30,6 +32,7 @@ describe('PreReservation', () => {
     sessionStorage.clear();
     jest.useRealTimers();
   });
+  /** Cria o componente com dependências simuladas para o teste. */
   function setup() {
     const fixture = TestBed.createComponent(PreReservation);
     fixture.componentRef.setInput('selectedDate', '2028-02-28');
@@ -38,6 +41,7 @@ describe('PreReservation', () => {
     const dialog = element.querySelector<HTMLDialogElement>('dialog')!;
     dialog.showModal = jest.fn(() => dialog.setAttribute('open', ''));
     dialog.close = jest.fn(() => dialog.removeAttribute('open'));
+    /** Preenche os campos com dados de teste e atualiza a tela. */
     const fill = (endDate = '2028-02-29') => {
       for (const [id, value] of Object.entries({
         name: 'Maria Silva',
@@ -52,6 +56,7 @@ describe('PreReservation', () => {
       }
       fixture.detectChanges();
     };
+    /** Dispara o envio do formulário no teste. */
     const submit = () => {
       element
         .querySelector('form')!
@@ -208,6 +213,7 @@ describe('PreReservation', () => {
   });
 
   it('rejects invalid dates and accepts incomplete periods for required-field validation', () => {
+    /** Monta um período de reserva para exercitar os validadores. */
     const group = (startDate: string, endDate: string) => new FormGroup({ startDate: new FormControl(startDate), endDate: new FormControl(endDate) });
     expect(reservationPeriod(group('', '2028-03-01'))).toBeNull();
     expect(reservationPeriod(group('invalid', '2028-03-01'))).toEqual({ invalidPeriod: true });
@@ -238,6 +244,7 @@ describe('PreReservation', () => {
     expect(element.querySelector('form')).not.toBeNull();
   });
 
+  /** Armazena um recibo fictício para testar a retomada da pré-reserva. */
   function saveReceipt() {
     sessionStorage.setItem('familia-tx-pre-reservation', JSON.stringify({
       ...testReservation,

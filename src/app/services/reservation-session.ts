@@ -4,14 +4,17 @@ import { inject, Injectable } from '@angular/core';
 import { resourceUrl } from './site-config';
 import { ReservationReceipt } from './booking.models';
 
+/** Confere se o recibo possui identificador e token no formato esperado. */
 function hasIdentity(value: Partial<ReservationReceipt> | null): value is Partial<ReservationReceipt> {
   return !!value && typeof value.id === 'string' && value.id.length > 0 && /^[a-f0-9]{64}$/.test(value.cancellationToken ?? '');
 }
 
+/** Confere se os links de contrato e Pix estão presentes como texto. */
 function hasLinks(value: Partial<ReservationReceipt>): value is Partial<ReservationReceipt> & Pick<ReservationReceipt, 'links'> {
   return typeof value.links?.contract === 'string' && typeof value.links.pix === 'string';
 }
 
+/** Valida as datas do recibo e exige que o término seja posterior ao início. */
 function validPeriod(value: Partial<ReservationReceipt>): boolean {
   if (typeof value.startAt !== 'string' || typeof value.endAt !== 'string') return false;
   const start = DateTime.fromISO(value.startAt);
@@ -21,6 +24,7 @@ function validPeriod(value: Partial<ReservationReceipt>): boolean {
 
 const receiptKey = 'familia-tx-pre-reservation';
 
+/** Valida e mantém o recibo do cliente na sessão do navegador. */
 @Injectable({ providedIn: 'root' })
 export class ReservationSession {
   private readonly document = inject(DOCUMENT);
@@ -45,20 +49,22 @@ export class ReservationSession {
     }
   }
 
+  /** Salva o recibo na sessão do navegador quando o armazenamento está disponível. */
   save(receipt: ReservationReceipt): void {
     try {
       this.document.defaultView?.sessionStorage.setItem(receiptKey, JSON.stringify(receipt));
     } catch {
-      /* The visible receipt remains available when storage is disabled. */
+      /* O recibo continua disponível na tela quando o armazenamento está desabilitado. */
     }
   }
 
+  /** Remove apenas o recibo correspondente à reserva informada. */
   clear(id: string): void {
     if (this.read()?.id !== id) return;
     try {
       this.document.defaultView?.sessionStorage.removeItem(receiptKey);
     } catch {
-      /* Storage can be disabled by the browser. */
+      /* O navegador pode bloquear o armazenamento da sessão. */
     }
   }
 }

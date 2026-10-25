@@ -12,6 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, timeout } from 'rxjs';
 import { EmailService } from '../../shared/email/email.service';
 import { reservationLink } from '../../services/reservation-link';
+/** Recebe o contrato PDF após validar o link individual da reserva. */
 @Component({
   selector: 'app-contract-upload',
   templateUrl: './contract-upload.html',
@@ -33,6 +34,7 @@ export class ContractUpload {
   protected readonly sending = signal(false);
   protected readonly fileValid = signal(false);
   protected readonly error = signal('');
+  /** Confere o link individual no servidor antes de habilitar o envio do contrato. */
   constructor() {
     afterNextRender(() => {
       const link = reservationLink(this.document, 'enviar-contrato');
@@ -78,6 +80,7 @@ export class ContractUpload {
     }
   }
 
+  /** Envia o PDF selecionado somente após validar a propriedade da reserva. */
   protected submit(event: Event): void {
     event.preventDefault();
     if (!this.link || !this.loaded() || !this.attachment || !this.fileValid() || this.sending()) return;

@@ -1,3 +1,4 @@
+/** Testa valores monetários, mensagens públicas e reutilização de chaves de reenvio. */
 import { expenseError, financeError, moneyPattern, moneyValue, RequestKey } from './finance-utils';
 
 describe('finance utilities', () => {

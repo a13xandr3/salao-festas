@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
 import { SiteConfig } from './site-config';
 
+/** Etapas de credenciais, cadastro TOTP, validação e acesso autorizado. */
 type LoginStage = 'credentials' | 'totp' | 'enroll' | 'authenticated';
 
 /** Mantém a sessão em memória; allowlist e AAL2 são verificados no servidor. */
@@ -19,6 +20,7 @@ export class AdminAuth {
   readonly email = this.currentEmail.asReadonly();
   readonly authorized = computed(() => this.stage() === 'authenticated');
 
+  /** Inicializa e reutiliza o cliente Supabase, mantendo a sessão apenas em memória. */
   private client(): Promise<SupabaseClient> {
     this.clientPromise ??= firstValueFrom(this.settings.config$).then(config => {
       const client = createClient(config.supabaseUrl, config.supabasePublishableKey, {
@@ -35,6 +37,7 @@ export class AdminAuth {
     return this.clientPromise;
   }
 
+  /** Valida as credenciais e a permissão inicial antes de preparar o segundo fator. */
   async signIn(email: string, password: string): Promise<void> {
     this.clear();
     const client = await this.client();
@@ -72,6 +75,7 @@ export class AdminAuth {
     this.currentStage.set('enroll');
   }
 
+  /** Valida o TOTP e libera a sessão somente após confirmar AAL2 e acesso administrativo. */
   async verify(code: string): Promise<void> {
     if (!this.factorId || !/^\d{6}$/.test(code)) throw new Error('Código inválido.');
     const client = await this.client();
@@ -88,6 +92,7 @@ export class AdminAuth {
     }
   }
 
+  /** Confere no servidor o segundo fator e a autorização do administrador. */
   private async checkAccess(client: SupabaseClient): Promise<void> {
     const assurance = await client.auth.mfa.getAuthenticatorAssuranceLevel();
     if (assurance.error || assurance.data.currentLevel !== 'aal2') throw new Error('Segundo fator obrigatório.');
@@ -101,6 +106,7 @@ export class AdminAuth {
     return operation(await this.client());
   }
 
+  /** Remove o acesso local e solicita o encerramento da sessão no Supabase. */
   async signOut(): Promise<void> {
     this.clear();
     const client = await this.client();
@@ -108,6 +114,7 @@ export class AdminAuth {
     if (result.error) throw result.error;
   }
 
+  /** Limpa a etapa de login, o fator, o e-mail e os dados de cadastro do Authenticator. */
   private clear(): void {
     this.currentStage.set('credentials');
     this.currentEnrollment.set(null);

@@ -1,3 +1,4 @@
+/** Confere a renderização dos ambientes apresentados no site. */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TopSpaces } from './top-spaces';

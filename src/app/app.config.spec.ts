@@ -1,3 +1,4 @@
+/** Testa as configurações de navegador e servidor da aplicação. */
 import { TestBed } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';

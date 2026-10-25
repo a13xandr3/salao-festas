@@ -1,3 +1,4 @@
+/** Testa a navegação administrativa e os bloqueios durante operações. */
 import { signal } from '@angular/core';
 import { DeferBlockState } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
@@ -24,6 +25,7 @@ describe('Painel', () => {
     fixture.componentRef.setInput('busy', true); fixture.detectChanges(); expect(button.disabled).toBe(true);
     authorized.set(false); fixture.detectChanges(); expect(element.querySelector('button')).toBeNull();
   });
+  /** Cria o componente com dependências simuladas para o teste. */
   function setup() {
     const authorized = signal(true);
     const auth = { authorized, email: () => 'admin@example.com', list: jest.fn().mockResolvedValue([]), finance: jest.fn().mockRejectedValue(new Error('offline')) };
