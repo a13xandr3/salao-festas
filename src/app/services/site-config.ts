@@ -10,9 +10,12 @@ export interface SupabaseConfig {
   pixUrl: string;
 }
 
+/** Rejeita URLs executáveis, credenciais embutidas e recursos HTTP em produção. */
 export function resourceUrl(value: string, base: string): string {
   const url = new URL(value, base);
-  if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) {
+  const localHttp = url.protocol === 'http:' &&
+    ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && new URL(base).protocol === 'http:';
+  if ((url.protocol !== 'https:' && !localHttp) || url.username || url.password) {
     throw new Error('Endereço de recurso inválido.');
   }
   return url.href;

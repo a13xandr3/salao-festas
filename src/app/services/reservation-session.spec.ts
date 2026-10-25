@@ -38,6 +38,13 @@ describe('ReservationSession', () => {
       expect(session.read()).toBeNull();
     }
   });
+  it('rejects unsafe URLs, unknown status and invalid or reversed dates from storage', () => {
+    const session=TestBed.inject(ReservationSession);
+    const base={...testReservation,cancellationToken:testReservation.notificationToken,links:{contract:'https://example.com/contract.pdf',pix:'https://example.com/pix'}};
+    for(const change of [{startAt:'invalid'},{endAt:'invalid'},{endAt:base.startAt},{status:'unexpected'},{id:''},{startAt:undefined},{endAt:undefined},{startAt:2028},{startAt:'2028-02-30T08:00:00Z'},{status:undefined},{links:{contract:'javascript:alert(1)',pix:base.links.pix}},{links:{contract:base.links.contract,pix:'http://example.com/pix'}}]) {
+      sessionStorage.setItem(key,JSON.stringify({...base,...change}));expect(session.read()).toBeNull();
+    }
+  });
   it('tolerates unavailable storage while keeping the page usable', () => {
     const session = TestBed.inject(ReservationSession);
     const receipt: ReservationReceipt = {

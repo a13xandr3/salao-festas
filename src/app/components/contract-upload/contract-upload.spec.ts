@@ -47,6 +47,16 @@ describe('ContractUpload', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Contrato recebido para envio por e-mail');
   });
+  it('does not submit a PDF before reservation ownership is confirmed', async () => {
+    history.replaceState(null,'','/#enviar-contrato?id=my-id&token='+'a'.repeat(64));
+    const fixture=TestBed.createComponent(ContractUpload);fixture.detectChanges();
+    const control=fixture.componentInstance as unknown as {loaded:()=>boolean;attachment:File;fileValid:{set:(value:boolean)=>void};submit:(event:Event)=>void};
+    control.attachment=new File(['%PDF-test'],'signed.pdf');control.fileValid.set(true);
+    control.submit(new Event('submit',{cancelable:true}));
+    const http=TestBed.inject(HttpTestingController);http.expectNone(emailUrl);
+    http.expectOne(rpcUrl('booking_owned_reservation')).flush(testReservation);
+    expect(control.loaded()).toBe(true);
+  });
   function loaded() {
     history.replaceState(null, '', '/#enviar-contrato?id=my-id&token=' + 'a'.repeat(64));
     const fixture = TestBed.createComponent(ContractUpload); fixture.detectChanges();

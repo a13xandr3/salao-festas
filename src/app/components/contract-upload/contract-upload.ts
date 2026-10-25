@@ -51,6 +51,7 @@ export class ContractUpload {
         });
     });
   }
+  /** A validação local de PDF melhora o retorno; o servidor repete a validação e a autorização. */
   protected async selectFile(event: Event): Promise<void> {
     this.attachment = null;
     this.fileValid.set(false);
@@ -79,7 +80,7 @@ export class ContractUpload {
 
   protected submit(event: Event): void {
     event.preventDefault();
-    if (!this.link || !this.attachment || !this.fileValid() || this.sending()) return;
+    if (!this.link || !this.loaded() || !this.attachment || !this.fileValid() || this.sending()) return;
     this.sending.set(true);
     this.error.set('');
     this.delivery

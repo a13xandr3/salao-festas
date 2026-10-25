@@ -28,11 +28,15 @@ describe('SiteConfig', () => {
     TestBed.inject(HttpTestingController).expectOne(testSite + 'app-config.json').flush({ ...testConfig, supabasePublishableKey: key });
     expect(received).toHaveBeenCalledWith(expect.objectContaining({ supabasePublishableKey: key }));
   });
-  it.each(['javascript:alert(1)', 'https://user@example.com/file', 'https://:pass@example.com/file'])('rejects unsafe resource %s', (value) => {
+  it.each(['javascript:alert(1)', 'https://user@example.com/file', 'https://:pass@example.com/file', 'http://example.com/file', 'http://localhost/file'])('rejects unsafe resource %s', (value) => {
     expect(() => resourceUrl(value, testSite)).toThrow('Endereço de recurso inválido.');
   });
   it('supports HTTP resources during local development', () => {
     expect(resourceUrl('/contract.pdf', 'http://localhost:4209/')).toBe('http://localhost:4209/contract.pdf');
+  });
+  it('permits only loopback HTTP in an HTTP development page', () => {
+    expect(resourceUrl('/file', 'http://127.0.0.1:4209/')).toBe('http://127.0.0.1:4209/file');
+    expect(resourceUrl('/file', 'http://[::1]:4209/')).toBe('http://[::1]:4209/file');
   });
   it('loads configuration and payment resources from the custom domain root', () => {
     expect(new URL('app-config.json', testSite).href).toBe('https://www.salaoespacotx.com.br/app-config.json');
