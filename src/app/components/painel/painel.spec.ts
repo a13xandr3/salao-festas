@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { DeferBlockState } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { AdminAuth } from '../../services/admin-auth';
+import { AdminData } from '../../services/admin-data';
 import { Painel } from './painel';
 
 describe('Painel', () => {
@@ -26,7 +27,7 @@ describe('Painel', () => {
   function setup() {
     const authorized = signal(true);
     const auth = { authorized, email: () => 'admin@example.com', list: jest.fn().mockResolvedValue([]), finance: jest.fn().mockRejectedValue(new Error('offline')) };
-    TestBed.configureTestingModule({ imports: [Painel], providers: [{ provide: AdminAuth, useValue: auth }] });
+    TestBed.configureTestingModule({ imports: [Painel], providers: [{ provide: AdminAuth, useValue: auth }, { provide: AdminData, useValue: auth }] });
     const fixture = TestBed.createComponent(Painel); fixture.detectChanges();
     return { fixture, auth, component: fixture.componentInstance, element: fixture.nativeElement as HTMLElement };
   }

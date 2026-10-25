@@ -91,16 +91,25 @@
             <h3 id="expenses-title" class="h5 m-0">Despesas</h3>
             <button type="button" class="btn btn-outline-dark" (click)="refreshExpenses()" [disabled]="loading() || saving() || disabled()">Atualizar lista</button>
           </div>
+          @if (expenseToDelete(); as expense) {
+            <div class="border rounded p-3 mb-3" role="group" aria-label="Confirmar exclusão da despesa">
+              <p>Excluir a despesa <strong>{{ expense.description }}</strong>, de {{ expense.occurredOn | date:'dd/MM/yyyy':'UTC' }}, no valor de <strong>{{ expense.amount | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>?</p>
+              <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-danger" (click)="deleteExpense()" [disabled]="loading() || saving() || disabled()">Confirmar exclusão</button>
+                <button type="button" class="btn btn-outline-dark" (click)="expenseToDelete.set(null)" [disabled]="saving()">Voltar</button>
+              </div>
+            </div>
+          }
           @if (expenses(); as report) {
             <p class="text-end mb-3" role="status">Total das despesas em {{ report.month + '-01' | date:'MM/yyyy':'UTC' }}: <strong>{{ report.total | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></p>
             @if (!report.entries.length) { <p>Nenhuma despesa registrada no mês selecionado.</p> }
             @else {
               <div class="table-responsive" tabindex="0" role="region" aria-labelledby="expenses-title">
                 <table class="table align-middle">
-                  <thead><tr><th scope="col">Data</th><th scope="col">Despesas</th><th scope="col" class="text-end">Valor</th></tr></thead>
+                  <thead><tr><th scope="col">Data</th><th scope="col">Despesas</th><th scope="col" class="text-end">Valor</th><th scope="col" class="text-end">Ações</th></tr></thead>
                   <tbody>
                     @for (row of report.entries; track row.id) {
-                      <tr><td class="text-nowrap">{{ row.occurredOn | date:'dd/MM/yyyy':'UTC' }}</td><td class="text-break">{{ row.description }}</td><td class="text-nowrap text-end">{{ row.amount | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td></tr>
+                      <tr><td class="text-nowrap">{{ row.occurredOn | date:'dd/MM/yyyy':'UTC' }}</td><td class="text-break">{{ row.description }}</td><td class="text-nowrap text-end">{{ row.amount | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td><td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger" (click)="expenseToDelete.set(row)" [disabled]="loading() || saving() || disabled()" [attr.aria-label]="'Excluir despesa: ' + row.description">Excluir</button></td></tr>
                     }
                   </tbody>
                 </table>

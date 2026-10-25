@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { AdminAuth } from '../../services/admin-auth';
+import { AdminData } from '../../services/admin-data';
 import { FinanceDashboard, FinanceReservation } from '../../services/finance.models';
-import { CashFlow, financeError } from './cash-flow';
+import { CashFlow } from './cash-flow';
+import { financeError } from '../../services/finance-utils';
 
 const id = '00000000-0000-4000-8000-000000000001';
 const reservation: FinanceReservation = { reservationId: id, name: '<img src=x onerror=alert(1)>', startDate: '2026-10-25', endDate: '2026-10-27', status: 'pending_payment', stayDays: 2, dailyRate: 400, totalAmount: 800, received: 0, refunded: 0, amountDue: 800, refundableAmount: 0 };
@@ -16,7 +17,7 @@ function dashboard(): FinanceDashboard {
 describe('CashFlow', () => {
   async function setup(response = dashboard()) {
     const auth = { list: jest.fn().mockResolvedValue([]), finance: jest.fn().mockImplementation((action: string) => Promise.resolve(action === 'overview' ? response : { id: 'saved' })) };
-    TestBed.configureTestingModule({ imports: [CashFlow], providers: [{ provide: AdminAuth, useValue: auth }] });
+    TestBed.configureTestingModule({ imports: [CashFlow], providers: [{ provide: AdminData, useValue: auth }] });
     const fixture = TestBed.createComponent(CashFlow); fixture.detectChanges();
     const dialog=fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
     dialog.showModal=jest.fn(()=>dialog.setAttribute('open',''));dialog.close=jest.fn(()=>dialog.removeAttribute('open'));  await fixture.whenStable(); fixture.detectChanges();
@@ -64,7 +65,13 @@ describe('CashFlow', () => {
     }
     await component['selectTab']('entry'); fixture.detectChanges(); expense(component);
     const input = element.querySelector<HTMLInputElement>('#finance-amount')!;
+    input.value='1234';input.setSelectionRange(1,1);input.dispatchEvent(new Event('input',{bubbles:true}));
+    expect(input.value).toBe('12,34');expect(input.selectionStart).toBe(1);
+    input.value='0000';input.setSelectionRange(0,0);input.dispatchEvent(new Event('input',{bubbles:true}));
+    expect(input.value).toBe('0,00');expect(input.selectionStart).toBe(0);
+    const selection=jest.spyOn(input,'selectionStart','get').mockReturnValue(null);
     input.value = '123456'; input.dispatchEvent(new Event('input', {bubbles:true}));
+    selection.mockRestore();
     await component['submitEntry']();
     expect(auth.finance).toHaveBeenCalledWith('post', {p_input:expect.objectContaining({amount:'1234.56'})});
   });
@@ -95,7 +102,7 @@ describe('CashFlow', () => {
     component['period'].controls.month.setValue('2026-10');
     await component['selectTab']('expenses');fixture.detectChanges();
     expect(auth.finance).toHaveBeenLastCalledWith('expenses',{p_month:'2026-10',p_page:0});
-    expect(Array.from(element.querySelectorAll('th')).map(el=>el.textContent?.trim())).toEqual(['Data','Despesas','Valor']);
+    expect(Array.from(element.querySelectorAll('th')).map(el=>el.textContent?.trim())).toEqual(['Data','Despesas','Valor','Ações']);
     const total=element.querySelector('p.text-end')!;expect(total.textContent).toContain('1.000,00');expect(total.textContent).toContain('10/2026');
     expect(total.compareDocumentPosition(element.querySelector('table')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(element.querySelector('tbody')!.textContent).toContain('22/10/2026');expect(element.querySelector('tbody')!.textContent).toContain('Cloro para piscina');expect(element.querySelector('tbody')!.textContent).toContain('80,00');
@@ -105,6 +112,37 @@ describe('CashFlow', () => {
     const apply=jest.spyOn(component as any,'applyPeriod');element.querySelector('form')!.dispatchEvent(new Event('submit',{cancelable:true}));await apply.mock.results[0].value;fixture.detectChanges();
     expect(component['expensePage']()).toBe(0);expect(element.textContent).toContain('Nenhuma despesa registrada');expect(element.querySelector('p.text-end')!.textContent).toContain('09/2026');
     expect(auth.finance).toHaveBeenLastCalledWith('expenses',{p_month:'2026-09',p_page:0});
+  });
+  it('confirms expense exclusion and refreshes the monthly total and cash summary', async () => {
+    const {component,auth,fixture,element}=await setup();
+    const expense={id:'expense-id',occurredOn:'2026-10-22',description:'Cloro lançado por engano',amount:80};
+    auth.finance.mockResolvedValueOnce({month:'2026-10',total:80,count:1,entries:[expense]});
+    await component['selectTab']('expenses');fixture.detectChanges();
+    const button=element.querySelector<HTMLButtonElement>('tbody button')!;
+    expect(button.textContent).toBe('Excluir');expect(button.parentElement).toBe(element.querySelector('tbody tr')!.lastElementChild);
+    button.click();fixture.detectChanges();expect(component['expenseToDelete']()).toEqual(expense);
+    const confirmation=element.querySelector('[aria-label="Confirmar exclusão da despesa"]')!;
+    expect(confirmation.textContent).toContain('Cloro lançado por engano');
+    confirmation.querySelector<HTMLButtonElement>('button.btn-outline-dark')!.click();fixture.detectChanges();expect(component['expenseToDelete']()).toBeNull();
+    button.click();fixture.detectChanges();component['expensePage'].set(1);
+    const updated=dashboard();updated.summary.expenses=0;updated.summary.closingBalance=930;
+    auth.finance.mockResolvedValueOnce({deleted:true}).mockResolvedValueOnce(updated).mockResolvedValueOnce({month:'2026-10',total:0,count:0,entries:[]});
+    const deletion=jest.spyOn(component as any,'deleteExpense');
+    element.querySelector<HTMLButtonElement>('[aria-label="Confirmar exclusão da despesa"] button.btn-danger')!.click();
+    await deletion.mock.results[0].value;fixture.detectChanges();
+    expect(auth.finance).toHaveBeenCalledWith('delete_expense',{p_id:'expense-id'});
+    expect(component['expensePage']()).toBe(0);expect(component['expenseToDelete']()).toBeNull();
+    expect(component['snapshot']()!.summary.expenses).toBe(0);expect(component['snapshot']()!.summary.closingBalance).toBe(930);
+    expect(element.textContent).toContain('Despesa excluída.');expect(element.textContent).toContain('Nenhuma despesa registrada');expect(element.querySelector('p.text-end')!.textContent).toContain('0,00');
+  });
+  it('keeps the selected expense on rejection and prevents concurrent exclusions', async () => {
+    const {component,auth,fixture}=await setup();
+    await component['deleteExpense']();
+    const expense={id:'expense-id',occurredOn:'2026-10-22',description:'Cloro',amount:80};component['expenseToDelete'].set(expense);
+    for(const lock of ['loading','saving'] as const){component[lock].set(true);await component['deleteExpense']();component[lock].set(false);}
+    fixture.componentRef.setInput('disabled',true);await component['deleteExpense']();fixture.componentRef.setInput('disabled',false);expect(auth.finance).toHaveBeenCalledTimes(1);
+    auth.finance.mockRejectedValueOnce({code:'PT409',message:'Despesa não pode ser excluída.'});await component['deleteExpense']();
+    expect(component['expenseToDelete']()).toEqual(expense);expect(component['error']()).toBe('Despesa não pode ser excluída.');
   });
   it('handles expense read failures, invalid periods and concurrent operations', async () => {
     const {component,auth,fixture}=await setup();
@@ -215,7 +253,7 @@ describe('CashFlow', () => {
   });
   it('honors all locks for form writes and confirmations', async () => {
     const {component,auth,fixture}=await setup();expense(component);price(component);
-    await component['confirmReservation']();component['confirmation'].set({row:reservation,action:'approve'});
+    await component['confirmReservation']();component['confirmation'].set({row:reservation});
     for(const lock of ['loading','saving'] as const) {component[lock].set(true);await component['submitEntry']();await component['submitPrice']();await component['confirmReservation']();component[lock].set(false);}
     fixture.componentRef.setInput('disabled',true);await component['submitEntry']();await component['submitPrice']();await component['confirmReservation']();expect(auth.finance).toHaveBeenCalledTimes(1);
   });

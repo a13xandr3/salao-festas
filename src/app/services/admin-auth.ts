@@ -3,15 +3,9 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
 import { SiteConfig } from './site-config';
 
-export type AdminList = 'contacts' | 'preReservations' | 'pre_reservas_canceladas';
-export interface AdminListRow {
-  id: string; name: string; email: string; phone: string; createdAt: string;
-  rejectionReason?: string; rejectedAt?: string; rejectionRefundAmount?: number;
-  message?: string; startDate?: string; endDate?: string; status?: string;
-}
-
 type LoginStage = 'credentials' | 'totp' | 'enroll' | 'authenticated';
 
+/** Mantém a sessão em memória; allowlist e AAL2 são verificados no servidor. */
 @Injectable({ providedIn: 'root' })
 export class AdminAuth {
   private readonly settings = inject(SiteConfig);
@@ -49,28 +43,33 @@ export class AdminAuth {
     try {
       const eligible = await client.rpc('booking_admin_eligible');
       if (eligible.error || eligible.data !== true) throw new Error('Acesso restrito.');
-      const factors = await client.auth.mfa.listFactors();
-      if (factors.error) throw factors.error;
-      const verified = factors.data.totp.find(factor => factor.status === 'verified');
       this.currentEmail.set(login.data.user.email ?? email.trim());
-      if (verified) {
-        this.factorId = verified.id;
-        this.currentStage.set('totp');
-        return;
-      }
-      for (const factor of factors.data.all.filter(factor => factor.factor_type === 'totp' && factor.status === 'unverified')) {
-        const removed = await client.auth.mfa.unenroll({ factorId: factor.id });
-        if (removed.error) throw removed.error;
-      }
-      const enrolled = await client.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Espaço TX', issuer: 'Espaço TX' });
-      if (enrolled.error) throw enrolled.error;
-      this.factorId = enrolled.data.id;
-      this.currentEnrollment.set({ qrCode: enrolled.data.totp.qr_code, secret: enrolled.data.totp.secret });
-      this.currentStage.set('enroll');
+      await this.prepareFactor(client);
     } catch (error) {
       await this.signOut();
       throw error;
     }
+  }
+
+  /** Reutiliza TOTP verificado e remove apenas cadastros TOTP ainda não concluídos. */
+  private async prepareFactor(client: SupabaseClient): Promise<void> {
+    const factors = await client.auth.mfa.listFactors();
+    if (factors.error) throw factors.error;
+    const verified = factors.data.totp.find(factor => factor.status === 'verified');
+    if (verified) {
+      this.factorId = verified.id;
+      this.currentStage.set('totp');
+      return;
+    }
+    for (const factor of factors.data.all.filter(factor => factor.factor_type === 'totp' && factor.status === 'unverified')) {
+      const removed = await client.auth.mfa.unenroll({ factorId: factor.id });
+      if (removed.error) throw removed.error;
+    }
+    const enrolled = await client.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Espaço TX', issuer: 'Espaço TX' });
+    if (enrolled.error) throw enrolled.error;
+    this.factorId = enrolled.data.id;
+    this.currentEnrollment.set({ qrCode: enrolled.data.totp.qr_code, secret: enrolled.data.totp.secret });
+    this.currentStage.set('enroll');
   }
 
   async verify(code: string): Promise<void> {
@@ -79,10 +78,7 @@ export class AdminAuth {
     const verified = await client.auth.mfa.challengeAndVerify({ factorId: this.factorId, code });
     if (verified.error) throw verified.error;
     try {
-      const assurance = await client.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (assurance.error || assurance.data.currentLevel !== 'aal2') throw new Error('Segundo fator obrigatório.');
-      const access = await client.rpc('booking_admin_access');
-      if (access.error || access.data !== true) throw new Error('Acesso restrito.');
+      await this.checkAccess(client);
       this.currentEnrollment.set(null);
       this.factorId = '';
       this.currentStage.set('authenticated');
@@ -92,32 +88,17 @@ export class AdminAuth {
     }
   }
 
-  async list(type: AdminList, month?: string): Promise<AdminListRow[]> {
-    if (!this.authorized()) throw new Error('Acesso restrito.');
-    const client = await this.client();
-    const columns = type === 'contacts'
-      ? 'id,name,email,phone,message,createdAt'
-      : 'id,name,email,phone,startDate,endDate,status,createdAt';
-    const selectedColumns = type === 'pre_reservas_canceladas' ? columns + ',rejectionReason,rejectedAt,rejectionRefundAmount' : columns;
-    const query = client.from(type).select(selectedColumns);
-    if (type === 'pre_reservas_canceladas' && month !== undefined) {
-      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Período inválido.');
-      const [year, monthNumber] = month.split('-').map(Number);
-      const nextMonth = monthNumber === 12 ? `${String(year + 1).padStart(4, '0')}-01` : `${year}-${String(monthNumber + 1).padStart(2, '0')}`;
-      query.gte('startDate', `${month}-01`).lt('startDate', `${nextMonth}-01`);
-    }
-    const result = await query.order('createdAt', { ascending: false }).limit(100).overrideTypes<AdminListRow[], { merge: false }>();
-    if (result.error) throw result.error;
-    return result.data ?? [];
+  private async checkAccess(client: SupabaseClient): Promise<void> {
+    const assurance = await client.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (assurance.error || assurance.data.currentLevel !== 'aal2') throw new Error('Segundo fator obrigatório.');
+    const access = await client.rpc('booking_admin_access');
+    if (access.error || access.data !== true) throw new Error('Acesso restrito.');
   }
 
-  async finance<T>(action: 'dashboard' | 'price' | 'post' | 'cancel' | 'overview' | 'negotiate' | 'approve' | 'reject' | 'expenses', parameters: object): Promise<T> {
+  /** Libera o cliente para operações de dados somente após concluir o fluxo de MFA. */
+  async runAuthorized<T>(operation: (client: SupabaseClient) => Promise<T>): Promise<T> {
     if (!this.authorized()) throw new Error('Acesso restrito.');
-    const client = await this.client();
-    const result = await client.rpc(`booking_finance_${action}`, parameters);
-    if (result.error) throw result.error;
-    if (result.data === null) throw new Error('Resposta financeira indisponível.');
-    return result.data as T;
+    return operation(await this.client());
   }
 
   async signOut(): Promise<void> {

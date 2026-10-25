@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { CashFlow } from '../cash-flow/cash-flow';
 import { DatePipe } from '@angular/common';
-import { AdminAuth, AdminList, AdminListRow } from '../../services/admin-auth';
+import { AdminAuth } from '../../services/admin-auth';
+import { AdminData, AdminList, AdminListRow } from '../../services/admin-data';
 
 type PanelList = Exclude<AdminList, 'pre_reservas_canceladas'>;
 
@@ -14,6 +15,7 @@ type PanelList = Exclude<AdminList, 'pre_reservas_canceladas'>;
 })
 export class Painel {
   protected readonly auth = inject(AdminAuth);
+  private readonly api = inject(AdminData);
   protected readonly year = new Date().getFullYear();
   protected readonly listTitles: Record<PanelList, string> = {
     contacts: 'Lista de contatos',
@@ -48,7 +50,7 @@ export class Painel {
     this.error.set('');
     this.loading.set(true);
     try {
-      this.rows.set(await this.auth.list(type));
+      this.rows.set(await this.api.list(type));
     } catch {
       this.error.set('Não foi possível carregar a lista. Tente novamente.');
     } finally {

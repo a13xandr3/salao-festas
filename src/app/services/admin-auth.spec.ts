@@ -98,6 +98,13 @@ describe('AdminAuth', () => {
     await expect(signIn()).rejects.toThrow();
     expect(service.stage()).toBe('credentials'); expect(service.enrollment()).toBeNull();
   });
+  it('only marks the session authorized after both AAL2 and allowlist verification', async () => {
+    await signIn();
+    const access=jest.fn(async () => { expect(service.authorized()).toBe(false);return ok(true); });
+    client.rpc.mockImplementation(access);
+    await service.verify('123456');
+    expect(access).toHaveBeenCalledWith('booking_admin_access');expect(service.authorized()).toBe(true);
+  });
   it('requires a factor and exactly six digits even when invoked outside the form', async () => {
     await expect(service.verify('123456')).rejects.toThrow();
     await signIn();
@@ -126,53 +133,12 @@ describe('AdminAuth', () => {
     await signIn(); await service.verify('123456');
     authEvent('INITIAL_SESSION', null); expect(service.authorized()).toBe(false);
   });
-  it('does not request lists without a fully authorized session', async () => {
-    await expect(service.list('contacts')).rejects.toThrow('Acesso restrito');
-    expect(createClient).not.toHaveBeenCalled();
-  });
-  it.each(['contacts', 'preReservations', 'pre_reservas_canceladas'] as const)('reads only selected public fields from the protected %s table', async type => {
-    await signIn(); await service.verify('123456');
-    const records = [{ id: 'record', name: 'Cliente' }];
-    const query = { select: jest.fn().mockReturnThis(), order: jest.fn().mockReturnThis(), limit: jest.fn().mockReturnThis(), overrideTypes: jest.fn().mockResolvedValue(ok(records)) };
-    client.from = jest.fn().mockReturnValue(query);
-    expect(await service.list(type)).toEqual(records);
-    expect(client.from).toHaveBeenCalledWith(type);
-    const columns = type === 'contacts' ? 'id,name,email,phone,message,createdAt' : 'id,name,email,phone,startDate,endDate,status,createdAt';
-    expect(query.select).toHaveBeenCalledWith(type === 'pre_reservas_canceladas' ? columns + ',rejectionReason,rejectedAt,rejectionRefundAmount' : columns);
-    expect(query.select.mock.calls[0][0]).not.toContain('Token');
-    expect(query.order).toHaveBeenCalledWith('createdAt', { ascending: false });
-    expect(query.limit).toHaveBeenCalledWith(100);
-    query.overrideTypes.mockResolvedValue(ok(null)); expect(await service.list(type)).toEqual([]);
-    query.overrideTypes.mockResolvedValue(failure()); await expect(service.list(type)).rejects.toThrow();
-  });
-  it.each([
-    ['2026-09', '2026-10'], ['2026-12', '2027-01'], ['2028-02', '2028-03'],
-  ])('filters cancelled events for %s before applying the row limit', async (month, next) => {
-    await signIn(); await service.verify('123456');
-    const query = {select:jest.fn().mockReturnThis(),gte:jest.fn().mockReturnThis(),lt:jest.fn().mockReturnThis(),order:jest.fn().mockReturnThis(),limit:jest.fn().mockReturnThis(),overrideTypes:jest.fn().mockResolvedValue(ok([]))};
-    client.from = jest.fn().mockReturnValue(query);
-    await service.list('pre_reservas_canceladas', month);
-    expect(query.gte).toHaveBeenCalledWith('startDate', month + '-01');
-    expect(query.lt).toHaveBeenCalledWith('startDate', next + '-01');
-    expect(query.lt.mock.invocationCallOrder[0]).toBeLessThan(query.limit.mock.invocationCallOrder[0]);
-    await expect(service.list('pre_reservas_canceladas', '2026-13')).rejects.toThrow('Período inválido');
-  });
-  it('protects financial RPCs with the same AAL2 session and propagates failures', async () => {
-    await expect(service.finance('dashboard', { p_month: '2026-10' })).rejects.toThrow('Acesso restrito');
-    await signIn(); await service.verify('123456');
-    client.rpc.mockResolvedValue(ok({ summary: {} }));
-    expect(await service.finance('dashboard', { p_month: '2026-10' })).toEqual({ summary: {} });
-    expect(client.rpc).toHaveBeenLastCalledWith('booking_finance_dashboard', { p_month: '2026-10' });
-    client.rpc.mockResolvedValue(ok({ cancelled: true }));
-    expect(await service.finance('cancel', { p_id: 'reservation-id' })).toEqual({ cancelled: true });
-    expect(client.rpc).toHaveBeenLastCalledWith('booking_finance_cancel', { p_id: 'reservation-id' });
-    for (const action of ['overview', 'negotiate', 'approve', 'reject', 'expenses'] as const) {
-      client.rpc.mockResolvedValue(ok({ id: 'result' }));
-      expect(await service.finance(action, {})).toEqual({ id: 'result' });
-      expect(client.rpc).toHaveBeenLastCalledWith(`booking_finance_${action}`, {});
-    }
-    client.rpc.mockResolvedValue(failure()); await expect(service.finance('post', {})).rejects.toThrow();
-    client.rpc.mockResolvedValue(ok(null)); await expect(service.finance('price', {})).rejects.toThrow('Resposta financeira indisponível');
+  it('only passes the SDK client to data operations after full authorization', async () => {
+    const operation=jest.fn(async ()=>'result');
+    await expect(service.runAuthorized(operation)).rejects.toThrow('Acesso restrito');expect(operation).not.toHaveBeenCalled();
+    await signIn();await expect(service.runAuthorized(operation)).rejects.toThrow('Acesso restrito');
+    await service.verify('123456');expect(await service.runAuthorized(operation)).toBe('result');expect(operation).toHaveBeenCalledWith(client);
+    await service.signOut();await expect(service.runAuthorized(operation)).rejects.toThrow('Acesso restrito');
   });
   it('hides the panel even if server sign-out fails', async () => {
     await signIn(); await service.verify('123456');
