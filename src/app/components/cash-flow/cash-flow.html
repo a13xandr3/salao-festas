@@ -178,7 +178,11 @@
         <form id="finance-entry" class="finance-form mb-4" [formGroup]="entry" (ngSubmit)="submitEntry()">
           <h3 class="h5">Registrar despesas</h3>
           <div class="row g-3">
-            <div class="col-12 col-md-6"><label for="finance-category" class="form-label">Categoria</label><select id="finance-category" class="form-select" formControlName="category" [attr.disabled]="saving() ? '' : null"><option value="limpeza">Limpeza</option><option value="manutencao">Manutenção</option><option value="agua">Água</option><option value="energia">Energia</option><option value="fornecedores">Fornecedores</option><option value="outros">Outros insumos e utensílios</option></select></div>
+            <div class="col-12 col-md-6"><label for="finance-category" class="form-label">Categoria</label><select id="finance-category" class="form-select" formControlName="category" [attr.disabled]="saving() ? '' : null">
+              @for (category of expenseCategories; track category.value) {
+                <option [value]="category.value">{{ category.label }}</option>
+              }
+            </select></div>
             <div class="col-12 col-md-6"><label for="finance-amount" class="form-label">Valor pago (R$)</label><input id="finance-amount" (input)="maskMoney($event, entry.controls.amount)" class="form-control" inputmode="decimal" formControlName="amount" required [readOnly]="saving()"></div>
             <div class="col-12 col-md-6"><label for="finance-date" class="form-label">Data do pagamento</label><input id="finance-date" class="form-control" type="date" formControlName="occurredOn" [max]="today" required [readOnly]="saving()"></div>
             <div class="col-12"><label for="finance-description" class="form-label">Descrição da despesa</label><input id="finance-description" class="form-control" formControlName="description" maxlength="500" required [readOnly]="saving()"></div>

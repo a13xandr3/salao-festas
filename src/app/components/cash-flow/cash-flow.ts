@@ -50,6 +50,15 @@ export class CashFlow implements OnInit {
     { id: 'expenses', label: 'Despesas' },
     { id: 'cancelled', label: 'Cancelados' },
   ] as const;
+  protected readonly expenseCategories = [
+    { value: 'limpeza', label: 'Limpeza' },
+    { value: 'manutencao', label: 'Manutenção' },
+    { value: 'agua', label: 'Água' },
+    { value: 'energia', label: 'Energia' },
+    { value: 'fornecedores', label: 'Fornecedores' },
+    { value: 'aluguel_avulso', label: 'Aluguel Avulso' },
+    { value: 'outros', label: 'Outros insumos e utensílios' },
+  ] as const;
   protected readonly period = this.fb.nonNullable.group({ month: [this.today.slice(0, 7), [Validators.required, Validators.pattern(/^\d{4}-(0[1-9]|1[0-2])$/)]] });
   protected readonly entry = this.fb.nonNullable.group({
     amount: ['', [Validators.required, Validators.pattern(moneyPattern)]],
@@ -70,15 +79,18 @@ export class CashFlow implements OnInit {
   private readonly receiptKey = new RequestKey();
   private readonly entryKey = new RequestKey();
 
+  /** Carrega o resumo financeiro e as reservas ao iniciar o componente. */
   ngOnInit(): void { void this.refresh(); }
 
+  /** Formata o valor em reais e atualiza o campo preservando a posição do cursor. */
   protected maskMoney(event: Event, control: FormControl<string>): void {
     control.setValue(maskMoney(event.target as HTMLInputElement));
   }
 
-  /** Bloqueia operações simultâneas na tela. A segurança depende de RLS e AAL2 no servidor. */
+  /** Informa se a tela está carregando, salvando ou bloqueada pelo componente pai. */
   private unavailable(): boolean { return this.loading() || this.saving() || this.disabled(); }
 
+  /** Atualiza o resumo e as reservas do mês, além da lista da aba ativa. */
   protected async refresh(): Promise<void> {
     this.period.markAllAsTouched();
     if (this.period.invalid || this.unavailable()) return;
@@ -89,16 +101,19 @@ export class CashFlow implements OnInit {
     if (this.tab() === 'cancelled') await this.refreshCancelled();
   }
 
+  /** Reinicia a paginação e as confirmações antes de consultar o mês selecionado. */
   protected async applyPeriod(): Promise<void> {
     this.expenseToDelete.set(null); this.expensePage.set(0); this.reservationPage.set(0); this.confirmation.set(null); await this.refresh();
   }
 
+  /** Avança ou retrocede a página de reservas e recarrega os dados. */
   protected async changePage(delta: number): Promise<void> {
     if (this.unavailable()) return;
     this.reservationPage.update(value => Math.max(0, value + delta));
     this.confirmation.set(null); await this.refresh();
   }
 
+  /** Abre a aba escolhida, limpa os avisos e consulta sua lista quando necessário. */
   protected async selectTab(type: 'entry' | 'price' | 'reservations' | 'cancelled' | 'expenses'): Promise<void> {
     if (this.unavailable()) return;
     this.notice.set(''); this.error.set(''); this.confirmation.set(null); this.expenseToDelete.set(null); this.tab.set(type);
@@ -106,6 +121,7 @@ export class CashFlow implements OnInit {
     if (type === 'expenses') await this.refreshExpenses();
   }
 
+  /** Consulta os registros cancelados com início no mês selecionado. */
   protected async refreshCancelled(): Promise<void> {
     this.period.markAllAsTouched();
     if (this.period.invalid || this.unavailable()) return;
@@ -114,6 +130,7 @@ export class CashFlow implements OnInit {
       () => 'Não foi possível carregar os cancelados. Tente novamente.');
   }
 
+  /** Consulta as despesas e o total mensal, respeitando a página atual. */
   protected async refreshExpenses(): Promise<void> {
     this.period.markAllAsTouched();
     if (this.period.invalid || this.unavailable()) return;
@@ -123,11 +140,13 @@ export class CashFlow implements OnInit {
     }), this.expenses, expenseError);
   }
 
+  /** Muda a página de despesas e fecha a confirmação de exclusão. */
   protected async changeExpensePage(delta: number): Promise<void> {
     if (this.unavailable()) return;
     this.expenseToDelete.set(null); this.expensePage.update(value => Math.max(0, value + delta)); await this.refreshExpenses();
   }
 
+  /** Solicita a exclusão da despesa selecionada e atualiza a lista e os totais após sucesso. */
   protected async deleteExpense(): Promise<void> {
     const expense = this.expenseToDelete();
     if (!expense || this.unavailable()) return;
@@ -137,6 +156,7 @@ export class CashFlow implements OnInit {
     }
   }
 
+  /** Valida e registra uma despesa, preservando a chave nos reenvios do mesmo lançamento. */
   protected async submitEntry(): Promise<void> {
     this.entry.markAllAsTouched();
     if (this.entry.invalid || this.unavailable()) return;
@@ -148,6 +168,7 @@ export class CashFlow implements OnInit {
     }
   }
 
+  /** Valida e salva a diária negociada e seu motivo, depois retorna à aba de reservas. */
   protected async submitPrice(): Promise<void> {
     this.price.markAllAsTouched();
     if (this.price.invalid || this.unavailable()) return;
@@ -158,6 +179,7 @@ export class CashFlow implements OnInit {
     }
   }
 
+  /** Abre a reprovação e exige dados de devolução quando há saldo recebido. */
   protected openRejection(row: FinanceReservation): void {
     this.rejection.reset({ reason: '', refundDate: this.today, refundReference: '', checked: false });
     const paid = row.refundableAmount > 0;
@@ -169,11 +191,13 @@ export class CashFlow implements OnInit {
     this.rejectionDialog().nativeElement.showModal();
   }
 
+  /** Fecha a janela de reprovação quando não há gravação em andamento. */
   protected closeRejection(): void {
     if (this.saving()) return;
     this.rejecting.set(null); this.rejectionDialog().nativeElement.close();
   }
 
+  /** Valida motivo e devolução, registra a reprovação e atualiza os dados da tela. */
   protected async submitRejection(): Promise<void> {
     this.rejection.markAllAsTouched();
     const row = this.rejecting();
@@ -188,12 +212,14 @@ export class CashFlow implements OnInit {
     }
   }
 
+  /** Prepara o pagamento da reserva sem preencher automaticamente o valor recebido. */
   protected openPayment(row: FinanceReservation): void {
     this.payment.reset({ amount: '', occurredOn: this.today, reference: '' });
     this.error.set(''); this.notice.set('');
     this.confirmation.set({ row });
   }
 
+  /** Registra o valor informado no Supabase; somente a quitação integral confirma a reserva. */
   protected async confirmReservation(): Promise<void> {
     const selected = this.confirmation();
     if (!selected || this.unavailable()) return;
@@ -210,7 +236,7 @@ export class CashFlow implements OnInit {
     }
   }
 
-  /** Centraliza o estado de leitura após validar o formulário e o bloqueio de concorrência. */
+  /** Executa uma consulta e controla seus dados, mensagem de erro e indicador de carregamento. */
   private async read<T>(request: () => Promise<T>, state: WritableSignal<T | null>, message = financeError): Promise<void> {
     this.loading.set(true); this.error.set('');
     try { state.set(await request()); }
@@ -218,6 +244,7 @@ export class CashFlow implements OnInit {
     finally { this.loading.set(false); }
   }
 
+  /** Executa uma gravação, notifica o painel e retorna se a operação teve sucesso. */
   private async write(action: FinanceAction, parameters: object): Promise<boolean> {
     this.saving.set(true); this.writing.emit(true); this.error.set(''); this.notice.set('');
     try { await this.api.finance(action, parameters); return true; }

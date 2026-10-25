@@ -1,3 +1,4 @@
+/** Testa abas, validações, recebimentos, despesas e reprovações com serviços simulados. */
 import { TestBed } from '@angular/core/testing';
 import { AdminData } from '../../services/admin-data';
 import { FinanceDashboard, FinanceReservation } from '../../services/finance.models';
@@ -6,6 +7,7 @@ import { financeError } from '../../services/finance-utils';
 
 const id = '00000000-0000-4000-8000-000000000001';
 const reservation: FinanceReservation = { reservationId: id, name: '<img src=x onerror=alert(1)>', startDate: '2026-10-25', endDate: '2026-10-27', status: 'pending_payment', stayDays: 2, dailyRate: 400, totalAmount: 800, received: 0, refunded: 0, amountDue: 800, refundableAmount: 0 };
+/** Monta o retorno financeiro fictício usado pelos testes. */
 function dashboard(): FinanceDashboard {
   return {
     summary: { openingBalance: 100, income: 800, expenses: 50, closingBalance: 850, amountDue: 800, unpricedCount: 1, unreconciledCount: 1 },
@@ -15,6 +17,7 @@ function dashboard(): FinanceDashboard {
   };
 }
 describe('CashFlow', () => {
+  /** Cria o componente com dependências simuladas para o teste. */
   async function setup(response = dashboard()) {
     const auth = { list: jest.fn().mockResolvedValue([]), finance: jest.fn().mockImplementation((action: string) => Promise.resolve(action === 'overview' ? response : { id: 'saved' })) };
     TestBed.configureTestingModule({ imports: [CashFlow], providers: [{ provide: AdminData, useValue: auth }] });
@@ -23,9 +26,11 @@ describe('CashFlow', () => {
     dialog.showModal=jest.fn(()=>dialog.setAttribute('open',''));dialog.close=jest.fn(()=>dialog.removeAttribute('open'));  await fixture.whenStable(); fixture.detectChanges();
     return { fixture, component: fixture.componentInstance, auth, element: fixture.nativeElement as HTMLElement };
   }
+  /** Preenche o formulário com uma despesa válida para o teste. */
   function expense(component: CashFlow) {
     component['entry'].setValue({ amount: '80,00', occurredOn: component['today'], description: ' Cloro ', category: 'limpeza' });
   }
+  /** Preenche o formulário com uma negociação válida para o teste. */
   function price(component: CashFlow) {
     component['price'].setValue({ reservationId: id, dailyRate: '350,00', reason: ' Desconto combinado ' });
   }
@@ -231,12 +236,24 @@ describe('CashFlow', () => {
     const pending=component['refresh']();await component['refresh']();fixture.detectChanges();expect(element.textContent).toContain('Consultando');
     fail(new Error('network'));await pending;fixture.detectChanges();expect(component['snapshot']()).toBeNull();expect(element.querySelector('[role=alert]')).not.toBeNull();
   });
+  it('renders categories from the array and posts Aluguel Avulso exclusively as an expense', async () => {
+    const {component,auth,fixture,element}=await setup();
+    await component['selectTab']('entry');fixture.detectChanges();
+    const select=element.querySelector<HTMLSelectElement>('#finance-category')!;
+    expect(Array.from(select.options).map(option=>({value:option.value,label:option.textContent}))).toEqual(component['expenseCategories']);
+    expect(Array.from(select.options).some(option=>option.value==='aluguel_avulso' && option.textContent==='Aluguel Avulso')).toBe(true);
+    expense(component);select.value='aluguel_avulso';select.dispatchEvent(new Event('change'));
+    component['entry'].controls.description.setValue('Aluguel avulso de utensílios');
+    await component['submitEntry']();
+    expect(auth.finance).toHaveBeenCalledWith('post',{p_input:expect.objectContaining({kind:'expense',category:'aluguel_avulso',amount:'80.00',description:'Aluguel avulso de utensílios'})});
+  });
   it('records expenses with no receipt, protocol or payment controls, retaining idempotency on retry', async () => {
     const {component,auth,fixture,element}=await setup();component['selectTab']('entry');
     await component['submitEntry']();fixture.detectChanges();expect(element.textContent).toContain('Confira categoria');expense(component);
     const original=auth.finance.getMockImplementation()!;
     auth.finance.mockImplementation((action:string,args:unknown)=>action==='post'?Promise.reject({code:'PT409',message:'Falha'}):original(action,args));
     await component['submitEntry']();await component['submitEntry']();
+    /** Obtém os lançamentos enviados ao serviço para conferir as tentativas do teste. */
     const writes=()=>auth.finance.mock.calls.filter(call=>call[0]==='post').map(call=>call[1] as any);
     expect(writes()[0].p_input.key).toBe(writes()[1].p_input.key);
     component['entry'].controls.amount.setValue('90');await component['submitEntry']();expect(writes()[2].p_input.key).not.toBe(writes()[1].p_input.key);
@@ -264,6 +281,7 @@ describe('CashFlow', () => {
     const original=auth.finance.getMockImplementation()!;
     auth.finance.mockImplementation((action:string,args:unknown)=>action==='approve'?Promise.reject({code:'PT409',message:'Confira o comprovante'}):original(action,args));
     await component['confirmReservation']();await component['confirmReservation']();
+    /** Obtém os lançamentos enviados ao serviço para conferir as tentativas do teste. */
     const writes=()=>auth.finance.mock.calls.filter(call=>call[0]==='approve').map(call=>call[1] as any);
     expect(writes()[0].p_key).toBe(writes()[1].p_key);
     expect(component['payment'].controls.amount.value).toBe('100,00');
@@ -296,6 +314,7 @@ describe('CashFlow', () => {
     const original=auth.finance.getMockImplementation()!;
     auth.finance.mockImplementation((action:string,args:unknown)=>action==='reject'?Promise.reject({code:'PT409',message:'Confira a devolução'}):original(action,args));
     await component['submitRejection']();await component['submitRejection']();
+    /** Obtém os lançamentos enviados ao serviço para conferir as tentativas do teste. */
     const writes=()=>auth.finance.mock.calls.filter(call=>call[0]==='reject').map(call=>call[1] as any);
     expect(writes()[0].p_refund_amount).toBe('800');expect(writes()[0].p_refund_reference).toBe('REFUND-800');
     expect(writes()[0].p_refund_date).toBe(component['today']);expect(writes()[0].p_key).toBe(writes()[1].p_key);
@@ -313,6 +332,7 @@ describe('CashFlow', () => {
   it('offers only approval and rejection, with manual payment required before approval', async () => {
     const {component,fixture,element,auth}=await setup();
     expect(Array.from(element.querySelectorAll('button')).some(button=>button.textContent?.trim()==='Remover')).toBe(false);
+    /** Aciona o botão pelo texto e atualiza a tela do teste. */
     const click=(label:string)=>{Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find(el=>el.textContent?.trim()===label)!.click();fixture.detectChanges();};
     const confirmations=jest.spyOn(component as any,'confirmReservation');
     click('Aprovar');expect(element.textContent).toContain('conferir o pagamento no banco');

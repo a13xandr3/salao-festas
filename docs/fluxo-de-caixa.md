@@ -69,3 +69,8 @@ Se a aba Despesas retornar `PGRST202`, a função não está disponível no sche
 Na aba **Despesas**, o botão **Excluir**, à direita de cada linha, mostra data, descrição e valor para confirmação. Após **Confirmar exclusão**, o lançamento sai do relatório e deixa de compor os totais de despesas e o saldo do caixa; a lista volta à primeira página. **Voltar** fecha a confirmação sem alterar o registro.
 
 A migração `202610250001_delete_expense.sql` adiciona `voided_at` e `voided_by` aos lançamentos. A RPC `booking_finance_delete_expense` exige administrador com AAL2 e permite somente despesas. O registro original permanece para auditoria. Repetir a exclusão é seguro e reenviar a criação original não reativa o lançamento excluído. Não há transferência bancária nem exclusão de recebimentos por essa ação.
+
+
+### Categoria Aluguel Avulso
+
+Em **Registrar despesas → Categoria**, **Aluguel Avulso** registra exclusivamente uma saída do caixa, como o aluguel de utensílios de terceiros. Não representa receita da locação do salão. As opções do dropdown ficam no array `expenseCategories` de `cash-flow.ts` e são renderizadas por `@for` no HTML. A migração `202610250002_avulso_expense_category.sql` habilita a categoria `aluguel_avulso` e impede seu uso em recebimentos ou ajustes de entrada/saída.
