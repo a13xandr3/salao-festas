@@ -11,12 +11,13 @@ test('cash flow preserves money, authorization and reservation history', async t
     create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid$$;
     grant usage on schema public,auth to anon,authenticated,service_role;`);
   const migration=readFileSync('supabase/migrations/202610220003_cash_flow.sql','utf8');
-  for(const file of readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&f!=='202610220003_cash_flow.sql').sort())await db.exec(readFileSync('supabase/migrations/'+file,'utf8'));
+  for(const file of readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&f<'202610220003_cash_flow.sql').sort())await db.exec(readFileSync('supabase/migrations/'+file,'utf8'));
   const call=async(name,args=[]) => (await db.query(`select public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) result`,args)).rows[0].result;
   const person={name:'Finance Test',phone:'11999999999',email:'finance@example.com',startDate:'2038-11-01',endDate:'2038-11-03'};
   const legacy=await call('booking_create_reservation',[person]);
   await db.query('update public."preReservations" set status=$1,"paymentConfirmedAt"=now() where id=$2',['confirmed',legacy.id]);
   await db.exec(migration);
+  for(const file of readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&f>'202610220003_cash_flow.sql').sort())await db.exec(readFileSync('supabase/migrations/'+file,'utf8'));
   const admin=randomUUID(),outsider=randomUUID();
   await db.query('insert into auth.users(id) values($1),($2)',[admin,outsider]);await db.query('insert into booking_private.admins(user_id) values($1)',[admin]);
   const claims=async(sub=admin,aal='aal2')=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub,aal})]);await db.exec('set role authenticated');};

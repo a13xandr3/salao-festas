@@ -62,3 +62,10 @@ Selecione o mês e clique em **Consultar**. O relatório mostra **Data**, **Desp
 
 
 Se a aba Despesas retornar `PGRST202`, a função não está disponível no schema cache do Supabase. Execute o conteúdo de `supabase/migrations/202610230005_expense_report.sql` no SQL Editor do projeto, após as migrações anteriores. O arquivo também solicita a atualização do cache do PostgREST. Essa falha é diferente de acesso negado (`PT403`/`42501`), que exige conferir a conta administradora e o segundo fator. A navegação entre abas permanece disponível se o resumo financeiro falhar.
+
+
+### Excluir uma despesa
+
+Na aba **Despesas**, o botão **Excluir**, à direita de cada linha, mostra data, descrição e valor para confirmação. Após **Confirmar exclusão**, o lançamento sai do relatório e deixa de compor os totais de despesas e o saldo do caixa; a lista volta à primeira página. **Voltar** fecha a confirmação sem alterar o registro.
+
+A migração `202610250001_delete_expense.sql` adiciona `voided_at` e `voided_by` aos lançamentos. A RPC `booking_finance_delete_expense` exige administrador com AAL2 e permite somente despesas. O registro original permanece para auditoria. Repetir a exclusão é seguro e reenviar a criação original não reativa o lançamento excluído. Não há transferência bancária nem exclusão de recebimentos por essa ação.
