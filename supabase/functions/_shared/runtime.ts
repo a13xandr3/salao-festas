@@ -10,6 +10,7 @@ function backendKey(): string | undefined {
   } catch { return undefined; }
 }
 
+/** Mantém o status dos erros públicos previstos e converte falhas internas em indisponibilidade. */
 function errorStatus(data: unknown, status: number): number {
   const code = (data as { code?: unknown } | null)?.code;
   return typeof code === 'string' && /^PT(400|403|404|409|413|429)$/.test(code) ? status : 503;
