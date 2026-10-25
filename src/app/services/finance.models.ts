@@ -17,3 +17,13 @@ export interface FinanceDashboard {
   summary: FinanceSummary; transactions: FinanceTransaction[]; reservations: FinanceReservation[];
   transactionCount: number; reservationCount: number;
 }
+
+/** O total mensal inclui todas as páginas; entries contém apenas a página consultada. */
+export interface ExpenseReport {
+  month: string;
+  total: number;
+  count: number;
+  entries: { id: string; occurredOn: string; description: string; amount: number }[];
+}
+export type FinanceOverview = Pick<FinanceDashboard, 'summary' | 'reservations' | 'reservationCount'>;
+export type FinanceAction = 'post' | 'overview' | 'negotiate' | 'approve' | 'reject' | 'expenses' | 'delete_expense';
