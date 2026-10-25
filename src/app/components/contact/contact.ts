@@ -1,6 +1,9 @@
-import { EmailService } from '../../shared/email/email.service';
+import { maskPhone } from '../../shared/formats/input-masks';
+import { ContactReceipt } from '../../services/booking.models';
+import { EmailResult, EmailService } from '../../shared/email/email.service';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SupabaseApi } from '../../services/supabase-api';
 
@@ -53,20 +56,7 @@ export class Contact {
   }
 
   protected maskPhone(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const digitsBeforeCursor = input.value.slice(0, input.selectionStart!).replace(/\D/g, '').length;
-    const digits = input.value.replace(/\D/g, '').slice(0, 11);
-    const split = digits.length > 10 ? 7 : 6;
-    let formatted = digits ? `(${digits.slice(0, 2)}` : '';
-    if (digits.length >= 2) formatted += ')';
-    if (digits.length > 2) formatted += ` ${digits.slice(2, split)}`;
-    if (digits.length > split) formatted += `-${digits.slice(split)}`;
-    input.value = formatted;
-    this.form.controls.phone.setValue(formatted);
-    const position = [...formatted].reduce((cursor, character, index) =>
-      /\d/.test(character) && formatted.slice(0, index + 1).replace(/\D/g, '').length <= digitsBeforeCursor
-        ? index + 1 : cursor, 0);
-    input.setSelectionRange(position, position);
+    this.form.controls.phone.setValue(maskPhone(event.target as HTMLInputElement));
   }
 
   protected invalid(field: keyof typeof this.form.controls): boolean {
@@ -74,6 +64,23 @@ export class Contact {
     return control.invalid && control.touched;
   }
 
+  private async sendRegistered(receipt: ContactReceipt): Promise<EmailResult | undefined> {
+    if (this.destroyRef.destroyed) return undefined;
+    return firstValueFrom(this.delivery.send({ kind: 'contact', id: receipt.id, token: receipt.deliveryToken })
+      .pipe(takeUntilDestroyed(this.destroyRef)));
+  }
+
+  private showSuccess(result: EmailResult | undefined): void {
+    if (!result || this.destroyRef.destroyed) return;
+    this.result.set('success');
+    this.feedback.set(result.sent
+      ? 'Sua mensagem foi registrada e enviada por e-mail. Obrigado pelo contato!'
+      : 'Sua mensagem foi registrada e será enviada por e-mail. Obrigado pelo contato!');
+    this.form.reset();
+    this.snackbarTimer = setTimeout(() => this.dismissSuccess(), 6000);
+  }
+
+  /** Cancela requisições pendentes e evita criar timers após destruir o componente. */
   protected async submit(): Promise<void> {
     if (this.sending()) return;
     this.form.markAllAsTouched();
@@ -83,22 +90,13 @@ export class Contact {
     const payload = this.form.getRawValue();
     let registered = false;
     try {
-      const { id, deliveryToken } = await firstValueFrom(
-        this.api.createContact(payload).pipe(timeout(15000)),
+      const receipt = await firstValueFrom(
+        this.api.createContact(payload).pipe(timeout(15000), takeUntilDestroyed(this.destroyRef)),
       );
       registered = true;
-      const result = await firstValueFrom(
-        this.delivery.send({ kind: 'contact', id, token: deliveryToken }),
-      );
-      this.result.set('success');
-      this.feedback.set(
-        result.sent
-          ? 'Sua mensagem foi registrada e enviada por e-mail. Obrigado pelo contato!'
-          : 'Sua mensagem foi registrada e será enviada por e-mail. Obrigado pelo contato!',
-      );
-      this.form.reset();
-      this.snackbarTimer = setTimeout(() => this.dismissSuccess(), 6000);
+      this.showSuccess(await this.sendRegistered(receipt));
     } catch {
+      if (this.destroyRef.destroyed) return;
       this.result.set(registered ? 'warning' : 'error');
       this.feedback.set(
         registered

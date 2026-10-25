@@ -11,6 +11,7 @@ const dialogIsOpen = (element: HTMLElement) =>
   element.querySelector('dialog')!.hasAttribute('open');
 
 describe('PreReservation', () => {
+
   beforeEach(async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2028-02-01T12:00:00Z'));
@@ -318,6 +319,13 @@ describe('PreReservation', () => {
     input.value = '(18) 98655-5494'; input.setSelectionRange(7, 7);
     input.dispatchEvent(new Event('input'));
     expect(input.selectionStart).toBe(7);
+  });
+
+  it('formats the phone safely when the browser does not expose a caret', () => {
+    const {element,fixture}=setup();const input=element.querySelector<HTMLInputElement>('#pre-phone')!;
+    input.value='18996555494';jest.spyOn(input,'selectionStart','get').mockReturnValue(null);
+    input.dispatchEvent(new Event('input'));fixture.detectChanges();
+    expect(input.value).toBe('(18) 99655-5494');expect(fixture.componentInstance['form'].controls.phone.value).toBe(input.value);
   });
 
 });

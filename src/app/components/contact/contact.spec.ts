@@ -187,4 +187,34 @@ describe('Contact with Gmail', () => {
     expect(element.querySelector('.alert-danger')!.textContent).toContain('Não foi possível registrar');
   });
 
+  it('formats the phone safely when the browser does not expose a caret', () => {
+    const {element,fixture}=setup();const input=element.querySelector<HTMLInputElement>('#contact-phone')!;
+    input.value='18996555494';jest.spyOn(input,'selectionStart','get').mockReturnValue(null);
+    input.dispatchEvent(new Event('input'));fixture.detectChanges();
+    expect(input.value).toBe('(18) 99655-5494');expect(fixture.componentInstance['form'].controls.phone.value).toBe(input.value);
+  });
+  it('cancels a pending contact request when the component is destroyed', async () => {
+    const {fixture,fill,submit,http,advance}=setup();fill();submit();
+    const request=http.expectOne(rpcUrl('booking_create_contact'));fixture.destroy();
+    expect(request.cancelled).toBe(true);await advance();http.expectNone(emailUrl);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+  it('does not start email delivery after a destroyed registration response', async () => {
+    const {fixture,fill,submit,http,advance}=setup();fill();submit();
+    http.expectOne(rpcUrl('booking_create_contact')).flush({id:'contact-id',deliveryToken:'a'.repeat(64)});
+    fixture.destroy();await advance();http.expectNone(emailUrl);expect(jest.getTimerCount()).toBe(0);
+  });
+  it('cancels pending email delivery without leaving feedback timers', async () => {
+    const {fixture,fill,submit,http,advance}=setup();fill();submit();
+    http.expectOne(rpcUrl('booking_create_contact')).flush({id:'contact-id',deliveryToken:'a'.repeat(64)});
+    await advance();const request=http.expectOne(emailUrl);fixture.destroy();expect(request.cancelled).toBe(true);
+    await advance();expect(jest.getTimerCount()).toBe(0);
+  });
+  it('does not create a snackbar when destroyed immediately after delivery completes', async () => {
+    const {fixture,fill,submit,http,advance}=setup();fill();submit();
+    http.expectOne(rpcUrl('booking_create_contact')).flush({id:'contact-id',deliveryToken:'a'.repeat(64)});
+    await advance();http.expectOne(emailUrl).flush({queued:true,sent:false});fixture.destroy();await advance();
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
 });
