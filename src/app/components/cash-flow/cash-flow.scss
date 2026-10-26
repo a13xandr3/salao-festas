@@ -8,6 +8,7 @@ small { overflow-wrap: anywhere; }
 .table-responsive { max-width: 100%; }
 
 .finance-period, .finance-period > div { min-width: 0; max-width: 100%; }
+.finance-period input[type="month"] { width: 11rem; min-width: 0; }
 button { max-width: 100%; overflow-wrap: anywhere; }
 
 .finance-table { min-width: 44rem; }

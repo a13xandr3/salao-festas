@@ -1,8 +1,11 @@
 <section aria-labelledby="finance-title" [attr.aria-busy]="loading() || saving()">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
     <h2 id="finance-title" class="h4 m-0">Financeiro · Fluxo de caixa</h2>
-    <form class="finance-period d-flex flex-wrap align-items-end gap-2" [formGroup]="period" (ngSubmit)="applyPeriod()">
-      <div><label for="finance-month" class="form-label">Período</label><input id="finance-month" type="month" class="form-control" formControlName="month" required [readOnly]="loading() || saving() || disabled()"></div>
+    <form class="finance-period d-flex flex-wrap align-items-center gap-2" [formGroup]="period" (ngSubmit)="applyPeriod()">
+      <div class="d-flex align-items-center gap-2">
+        <label for="finance-month" class="form-label mb-0 text-end text-nowrap flex-shrink-0">Período</label>
+        <input id="finance-month" type="month" class="form-control" formControlName="month" required [readOnly]="loading() || saving() || disabled()">
+      </div>
       <button class="btn btn-outline-dark" [disabled]="loading() || saving() || disabled()">Consultar</button>
     </form>
   </div>
