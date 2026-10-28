@@ -438,3 +438,7 @@ Ocultar uma aba ou desabilitar um botão não substitui autorização. As valida
 - [Operação do fluxo de caixa](docs/fluxo-de-caixa.md).
 - [Expurgo de dados técnicos](docs/expurgo-tecnico.md).
 - [Inspeção e refatoração TypeScript](docs/revisao-typescript.md).
+
+## Galeria de fotos
+
+A galeria pública e a aba **Galeria** do painel usam álbuns. O upload armazena cada foto em gzip e seu path na tabela `gallery_images` do Supabase. Consulte [configuração e operação](docs/GALERIA.md) para aplicar a migração da galeria.
