@@ -1,0 +1,32 @@
+<div class="photo-grid">
+  @for (photo of photos(); track photo.id; let index = $index) {
+    <div class="photo-item">
+    <button #thumbnail type="button" class="photo-thumbnail" (click)="open(index, thumbnail)" [attr.aria-label]="'Ampliar: ' + photo.description">
+      <img [src]="photo.url" [alt]="photo.description" loading="lazy" decoding="async" width="480" height="360">
+    </button>
+    @if (removable()) {
+      <button type="button" class="photo-remove" [disabled]="disabled()" [attr.aria-label]="'Excluir foto: ' + photo.description" (click)="remove.emit(photo)"><span aria-hidden="true">×</span></button>
+    }
+    </div>
+  } @empty {
+    <p role="status">Nenhuma foto disponível.</p>
+  }
+</div>
+<dialog #viewer aria-label="Visualização de fotos" (close)="closed()" (keydown.arrowLeft)="$event.preventDefault(); move(-1)" (keydown.arrowRight)="$event.preventDefault(); move(1)">
+  <button type="button" class="btn btn-light close-viewer" (click)="close()" autofocus aria-label="Fechar visualização">Fechar</button>
+  @if (selected() !== null) {
+    @let photo = photos()[selected()!];
+    @if (photo) {
+      <figure>
+        <img [src]="photo.url" [alt]="photo.description">
+        <figcaption>{{ photo.description }} · {{ selected()! + 1 }} / {{ photos().length }}</figcaption>
+      </figure>
+      @if (photos().length > 1) {
+        <div class="viewer-actions">
+          <button type="button" class="btn btn-light" (click)="move(-1)" aria-label="Foto anterior">Anterior</button>
+          <button type="button" class="btn btn-light" (click)="move(1)" aria-label="Próxima foto">Próxima</button>
+        </div>
+      }
+    }
+  }
+</dialog>

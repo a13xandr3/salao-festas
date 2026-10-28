@@ -1,3 +1,4 @@
+import { Gallery } from './components/gallery/gallery';
 import { DOCUMENT } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
 import { Login } from './components/login/login';
@@ -27,6 +28,7 @@ import { Footer } from './components/footer/footer';
     Contact,
     ReservationCalendar,
     Footer,
+    Gallery,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

@@ -21,6 +21,7 @@ describe('Navbar', () => {
     expect(component).toBeTruthy();
     const restricted = fixture.nativeElement.querySelector('a[href="?area=restrita"]');
     expect(restricted.textContent).toContain('Área restrita');
+    expect(restricted.closest('li').previousElementSibling.textContent).toContain('Galeria');
     expect(restricted.getAttribute('target')).toBe('_blank');
     expect(restricted.getAttribute('rel')).toBe('noopener noreferrer');
   });

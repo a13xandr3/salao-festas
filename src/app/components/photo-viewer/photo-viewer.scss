@@ -1,0 +1,17 @@
+:host { display: block; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 1rem; }
+.photo-thumbnail { padding: 0; border: 0; border-radius: .75rem; overflow: hidden; background: #e5e5da; cursor: zoom-in; }
+.photo-thumbnail img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+button:focus-visible { outline: 3px solid #293126; outline-offset: 4px; }
+dialog { width: min(95vw, 70rem); max-height: 95dvh; padding: 1rem; border: 0; border-radius: .75rem; background: #182019; color: white; }
+dialog::backdrop { background: #000c; }
+.close-viewer { display: block; margin: 0 0 1rem auto; }
+figure { margin: 0; text-align: center; }
+figure img { display: block; max-width: 100%; max-height: 65dvh; width: auto; height: auto; margin: auto; object-fit: contain; }
+figcaption { margin-top: .75rem; overflow-wrap: anywhere; }
+.viewer-actions { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
+
+.photo-item { position: relative; min-width: 0; }
+.photo-item .photo-thumbnail { width: 100%; }
+.photo-remove { position: absolute; top: .5rem; right: .5rem; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #fff; border-radius: 50%; background: #a51d27; color: #fff; font-size: 2rem; line-height: 1; cursor: pointer; }
+.photo-remove:disabled { opacity: .5; cursor: wait; }

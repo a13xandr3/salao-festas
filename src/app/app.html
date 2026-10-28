@@ -9,6 +9,7 @@
     <app-celebration-area id="celebracoes"></app-celebration-area>
     <app-our-services id="servicos"></app-our-services>
     <app-reservation-calendar id="agenda"></app-reservation-calendar>
+    @defer (on idle) { <app-gallery id="galeria"></app-gallery> } @placeholder { <section id="galeria" aria-label="Galeria"></section> }
     <app-contact id="contato"></app-contact>
     <router-outlet></router-outlet>
   </main>
