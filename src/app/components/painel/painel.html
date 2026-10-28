@@ -5,17 +5,20 @@
         <img src="images/familia-tx-96.png" alt="Família TX" width="80" height="80">
       </a>
       <nav class="panel-nav" aria-label="Navegação do painel">
-        <a href="#lista-contatos" [class.active]="selectedList() === 'contacts'" [attr.aria-current]="selectedList() === 'contacts' ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy()" (click)="$event.preventDefault(); load('contacts')">Contatos</a>
-        <a href="#lista-pre-reservas" [class.active]="selectedList() === 'preReservations'" [attr.aria-current]="selectedList() === 'preReservations' ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy()" (click)="$event.preventDefault(); load('preReservations')">Pré-reservas</a>
-        <a href="#financeiro" [class.active]="financeOpen()" [attr.aria-current]="financeOpen() ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy()" (click)="$event.preventDefault(); openFinance()">Financeiro</a>
+        <a href="#lista-contatos" [class.active]="selectedList() === 'contacts'" [attr.aria-current]="selectedList() === 'contacts' ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy() || galleryBusy()" (click)="$event.preventDefault(); load('contacts')">Contatos</a>
+        <a href="#lista-pre-reservas" [class.active]="selectedList() === 'preReservations'" [attr.aria-current]="selectedList() === 'preReservations' ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy() || galleryBusy()" (click)="$event.preventDefault(); load('preReservations')">Pré-reservas</a>
+        <a href="#financeiro" [class.active]="financeOpen()" [attr.aria-current]="financeOpen() ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy() || galleryBusy()" (click)="$event.preventDefault(); openFinance()">Financeiro</a>
+        <a href="#galeria-painel" [class.active]="galleryOpen()" [attr.aria-current]="galleryOpen() ? 'page' : null" [attr.aria-disabled]="loading() || busy() || financeBusy() || galleryBusy()" (click)="$event.preventDefault(); openGallery()">Galeria</a>
       </nav>
-      <button type="button" class="panel-logout btn btn-outline-dark ms-auto" [disabled]="busy() || financeBusy()" (click)="signOut.emit()">Logout</button>
+      <button type="button" class="panel-logout btn btn-outline-dark ms-auto" [disabled]="busy() || financeBusy() || galleryBusy()" (click)="signOut.emit()">Logout</button>
     </header>
     <main class="panel-main" aria-labelledby="painel-title">
       <h1 id="painel-title" class="visually-hidden">Painel</h1>
       <span class="visually-hidden">Usuário: {{ auth.email() }}</span>
       <div class="panel-results">
-        @if (financeOpen()) {
+        @if (galleryOpen()) {
+          @defer (when galleryOpen()) { <app-gallery-admin id="galeria-painel" [disabled]="busy()" (writing)="galleryBusy.set($event)" /> }
+        } @else if (financeOpen()) {
           @defer (when financeOpen()) { <app-cash-flow id="financeiro" [disabled]="busy()" (writing)="financeBusy.set($event)"></app-cash-flow> }
         } @else if (selectedList(); as list) {
           <section [id]="listIds[list]" [attr.aria-busy]="loading()" aria-labelledby="list-title">

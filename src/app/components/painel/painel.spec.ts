@@ -1,3 +1,4 @@
+import { Gallery } from '../../services/gallery';
 /** Testa a navegação administrativa e os bloqueios durante operações. */
 import { signal } from '@angular/core';
 import { DeferBlockState } from '@angular/core/testing';
@@ -29,14 +30,14 @@ describe('Painel', () => {
   function setup() {
     const authorized = signal(true);
     const auth = { authorized, email: () => 'admin@example.com', list: jest.fn().mockResolvedValue([]), finance: jest.fn().mockRejectedValue(new Error('offline')) };
-    TestBed.configureTestingModule({ imports: [Painel], providers: [{ provide: AdminAuth, useValue: auth }, { provide: AdminData, useValue: auth }] });
+    TestBed.configureTestingModule({ imports: [Painel], providers: [{ provide: AdminAuth, useValue: auth }, { provide: AdminData, useValue: auth }, { provide: Gallery, useValue: { load: jest.fn().mockResolvedValue({ albums: [] }) } }] });
     const fixture = TestBed.createComponent(Painel); fixture.detectChanges();
     return { fixture, auth, component: fixture.componentInstance, element: fixture.nativeElement as HTMLElement };
   }
   it('navigates to contacts and pre-reservations without reloading the authenticated page', async () => {
     const { fixture, auth, element } = setup();
     const links = element.querySelectorAll<HTMLAnchorElement>('nav a');
-    expect(Array.from(links, link => link.textContent)).toEqual(['Contatos', 'Pré-reservas', 'Financeiro']);
+    expect(Array.from(links, link => link.textContent)).toEqual(['Contatos', 'Pré-reservas', 'Financeiro', 'Galeria']);
     expect(auth.list).not.toHaveBeenCalled();
     expect(element.querySelector('.panel-empty')!.textContent).toContain('Aqui será exibido o resultado');
     expect(element.querySelector('.panel-footer')!.textContent).toContain('Desenvolvido por Alexandre Esteves Alves');
@@ -72,6 +73,19 @@ describe('Painel', () => {
     component['openFinance'](); await component['load']('contacts'); expect(auth.list).not.toHaveBeenCalled();
     component['financeBusy'].set(false); await component['load']('contacts'); fixture.detectChanges();
     expect(element.querySelector('app-cash-flow')).toBeNull();
+  });
+  it('opens gallery and blocks logout and other views during upload', async () => {
+    const { fixture, component, auth, element } = setup();
+    component['openGallery']();
+    expect(component['galleryOpen']()).toBe(true);
+    component['galleryBusy'].set(true); fixture.detectChanges();
+    expect(element.querySelector<HTMLButtonElement>('.panel-logout')!.disabled).toBe(true);
+    component['openFinance'](); await component['load']('contacts');
+    expect(component['financeOpen']()).toBe(false);
+    expect(auth.list).not.toHaveBeenCalled();
+    component['galleryBusy'].set(false); component['openFinance']();
+    expect(component['galleryOpen']()).toBe(false);
+    expect(component['financeOpen']()).toBe(true);
   });
   it('keeps the cancelled report out of the panel header', () => {
     const {element,auth}=setup();

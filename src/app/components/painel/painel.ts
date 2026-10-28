@@ -1,3 +1,4 @@
+import { GalleryAdmin } from '../gallery-admin/gallery-admin';
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { CashFlow } from '../cash-flow/cash-flow';
 import { DatePipe } from '@angular/common';
@@ -13,7 +14,7 @@ type PanelList = Exclude<AdminList, 'pre_reservas_canceladas'>;
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './painel.html',
   styleUrl: './painel.scss',
-  imports: [DatePipe, CashFlow],
+  imports: [DatePipe, CashFlow, GalleryAdmin],
 })
 export class Painel {
   protected readonly auth = inject(AdminAuth);
@@ -33,21 +34,30 @@ export class Painel {
   protected readonly selectedList = signal<PanelList | null>(null);
   protected readonly rows = signal<AdminListRow[]>([]);
   protected readonly loading = signal(false);
+  protected readonly galleryOpen = signal(false);
+  protected readonly galleryBusy = signal(false);
   protected readonly financeOpen = signal(false);
   protected readonly financeBusy = signal(false);
   protected readonly error = signal('');
 
   /** Abre o financeiro quando a sessão está autorizada e não há operação em andamento. */
   protected openFinance(): void {
-    if (this.busy() || this.loading() || this.financeBusy() || !this.auth.authorized()) return;
+    if (this.busy() || this.loading() || this.financeBusy() || this.galleryBusy() || !this.auth.authorized()) return;
     this.selectedList.set(null);
     this.error.set('');
+    this.galleryOpen.set(false);
     this.financeOpen.set(true);
+  }
+
+  protected openGallery(): void {
+    if (this.busy() || this.loading() || this.financeBusy() || this.galleryBusy() || !this.auth.authorized()) return;
+    this.selectedList.set(null); this.financeOpen.set(false); this.error.set(''); this.galleryOpen.set(true);
   }
 
   /** Consulta a lista administrativa escolhida e apresenta os dados ou uma mensagem de erro. */
   protected async load(type: PanelList): Promise<void> {
-    if (this.busy() || this.loading() || this.financeBusy() || !this.auth.authorized()) return;
+    if (this.busy() || this.loading() || this.financeBusy() || this.galleryBusy() || !this.auth.authorized()) return;
+    this.galleryOpen.set(false);
     this.financeOpen.set(false);
     this.selectedList.set(type);
     this.rows.set([]);

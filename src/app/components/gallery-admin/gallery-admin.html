@@ -1,0 +1,33 @@
+<section aria-labelledby="admin-gallery-title" [attr.aria-busy]="loading() || uploading()">
+  <h2 id="admin-gallery-title" class="h4">Galeria</h2>
+  <p>Organize as fotos por álbum. As fotos são compactadas em gzip e armazenadas no Supabase, junto com o caminho de cada imagem.</p>
+  @if (loading()) { <p role="status">Carregando álbuns…</p> }
+  @if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
+  @if (notice()) { <p class="alert alert-info" role="status">{{ notice() }}</p> }
+  @if (!loading()) {
+    <nav aria-label="Navegação dos álbuns" class="mb-3">
+      <button class="btn btn-link" [disabled]="disabled() || uploading()" (click)="open(null)">Álbuns</button>
+      @if (selected(); as album) { <span> / {{ album.name }}</span> }
+    </nav>
+    @if (!selected()) {
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        @for (album of albums(); track album.id) {
+          <button class="btn btn-outline-dark" [disabled]="disabled() || uploading()" (click)="open(album)">{{ album.name }} · {{ album.photos.length }} foto(s)</button>
+        } @empty { <p>Nenhum álbum publicado. Crie o primeiro abaixo.</p> }
+      </div>
+    }
+    <form [formGroup]="form" (ngSubmit)="submit(fileInput)" class="mb-4">
+      <fieldset [disabled]="disabled() || uploading()">
+        <legend class="h5">{{ selected() ? 'Adicionar fotos ao álbum' : 'Criar álbum e enviar fotos' }}</legend>
+        <label for="gallery-album-name" class="form-label">Nome do álbum</label>
+        <input id="gallery-album-name" class="form-control mb-3" formControlName="name" maxlength="80" [readOnly]="!!selected()" required>
+        <label for="gallery-files" class="form-label">Fotos</label>
+        <input #fileInput id="gallery-files" type="file" class="form-control" accept="image/jpeg,image/png,image/webp" multiple (change)="choose($event)" aria-describedby="gallery-file-help">
+        <p id="gallery-file-help" class="form-text">Até 20 arquivos por envio. JPG, PNG ou WebP. Máximo de 5 MB por foto e 20 MB no total.</p>
+        @if (files().length) { <ul>@for (file of files(); track $index) { <li class="text-break">{{ file.name }}</li> }</ul> }
+        <button class="btn btn-dark" type="submit" [disabled]="form.invalid || !files().length">{{ uploading() ? 'Enviando…' : 'Salvar fotos' }}</button>
+      </fieldset>
+    </form>
+    @if (selected(); as album) { <h3 class="h5">{{ album.name }}</h3><app-photo-viewer [photos]="album.photos" [removable]="true" [disabled]="disabled() || uploading()" (remove)="deletePhoto($event.id)" /> }
+  }
+</section>
