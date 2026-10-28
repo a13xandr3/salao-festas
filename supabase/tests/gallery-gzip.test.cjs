@@ -1,0 +1,52 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { readFileSync, readdirSync } = require('node:fs');
+const { gzipSync, gunzipSync } = require('node:zlib');
+const { PGlite } = require('@electric-sql/pglite');
+
+test('galeria gzip: leitura pública, gravação AAL2 e lote atômico', async t => {
+  const db = new PGlite(); t.after(() => db.close());
+  await db.exec(`create role anon; create role authenticated; create role service_role;
+    create schema auth; create table auth.users(id uuid primary key);
+    create function auth.jwt() returns jsonb language sql stable as
+      $$select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb$$;
+    create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid$$;
+    grant usage on schema public, auth to anon, authenticated, service_role;`);
+  for (const file of readdirSync('supabase/migrations').filter(file => file.endsWith('.sql')).sort()) await db.exec(readFileSync('supabase/migrations/' + file, 'utf8'));
+  const admin = '00000000-0000-4000-8000-000000000001';
+  const outsider = '00000000-0000-4000-8000-000000000002';
+  await db.query('insert into auth.users values ($1),($2)', [admin, outsider]);
+  await db.query('insert into booking_private.admins(user_id) values ($1)', [admin]);
+  const image = Buffer.from([137,80,78,71,13,10,26,10]);
+  const photo = { description: 'Salão', mime_type: 'image/png', original_size: image.length, gzip_hex: gzipSync(image).toString('hex') };
+  const upload = (photos = [photo], album = null) => db.query('select public.booking_gallery_upload($1,$2,$3) count', [album, 'Salão', JSON.stringify(photos)]);
+  const login = async (sub, aal) => { await db.exec('reset role'); await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify({ sub, aal })]); await db.exec('set role authenticated'); };
+  await db.exec('set role anon');
+  await assert.rejects(upload(), error => error.code === '42501');
+  await login(admin, 'aal1'); await assert.rejects(upload(), error => error.code === 'PT403');
+  await login(outsider, 'aal2'); await assert.rejects(upload(), error => error.code === 'PT403');
+  await login(admin, 'aal2');
+  assert.equal((await upload()).rows[0].count, 1);
+  let rows = (await db.query('select * from public.gallery_images')).rows;
+  assert.match(rows[0].path, /^images\/galeria\/.+\.png$/);
+  assert.deepEqual(gunzipSync(rows[0].gzip_data), image);
+  await assert.rejects(upload([photo, { ...photo, gzip_hex: '000000' }]), error => error.code === '23514');
+  assert.equal((await db.query('select * from public.gallery_images')).rows.length, 1);
+  await assert.rejects(upload(Array(21).fill(photo)), error => error.code === 'PT400');
+  await assert.rejects(upload(Array(5).fill({ ...photo, original_size: 5242880 })), error => error.code === 'PT413');
+  await upload([photo], rows[0].album_id);
+  await db.exec('reset role; set role anon');
+  rows = (await db.query('select * from public.gallery_images')).rows;
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].album_id, rows[1].album_id);
+  await assert.rejects(db.query('delete from public.gallery_images'), error => error.code === '42501');
+  const remove = id => db.query('select public.booking_gallery_delete($1)', [id]);
+  await assert.rejects(remove(rows[0].id), error => error.code === '42501');
+  await login(admin, 'aal1'); await assert.rejects(remove(rows[0].id), error => error.code === 'PT403');
+  await login(outsider, 'aal2'); await assert.rejects(remove(rows[0].id), error => error.code === 'PT403');
+  await login(admin, 'aal2'); await remove(rows[0].id);
+  await assert.rejects(remove(rows[0].id), error => error.code === 'PT404');
+  const remaining = (await db.query('select id from public.gallery_images')).rows;
+  assert.equal(remaining.length, 1); assert.equal(remaining[0].id, rows[1].id);
+
+});
